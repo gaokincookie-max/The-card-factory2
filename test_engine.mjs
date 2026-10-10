@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {initialState,beltLine,place,step,setShippingGroups,shippingCell,warehouseStock,setWarehouseMode,encodeItem,decodeItem,isUnit,handReceive} from './src/engine.js';
+let s=initialState();assert.equal(place(s,'iron',4,4,0),null);assert.equal(place(s,'copper',4,4,0),'施設と重複します');
+assert.equal(beltLine(s,6,4,8,4),null);assert.equal(beltLine(s,8,4,8,7),null);assert.equal(s.belts.find(b=>b.x===8&&b.y===4).next.length,1);assert.equal(beltLine(s,6,7,8,7),null);assert.equal(s.belts.find(b=>b.x===8&&b.y===7).previous.length,2);
+assert.equal(place(s,'moduleAttack',7,4),null);assert.equal(isUnit('歩兵分隊'),true);assert.equal(isUnit('鉄材'),false);
+assert.equal(setShippingGroups(s,[[0,2],[1,3]]),null);assert.equal(shippingCell(s,15,15,'A'),true);assert.equal(shippingCell(s,15,15,'B'),true);assert.equal(shippingCell(s,15,15,'C'),true);assert.equal(shippingCell(s,15,15,'D'),true);assert.equal(shippingCell(s,15,15,'E'),false);assert.deepEqual(s.hand,['A','B',null,null,null,null,'C','D']);assert.equal(shippingCell(s,16,15,'E'),true);assert.equal(s.hand[2],'E');
+const key=encodeItem({name:'歩兵分隊',mods:['attack']});assert.deepEqual(decodeItem(key),{name:'歩兵分隊',mods:['attack']});
+console.log('PASS: placement, belt junction, upgrade placement, split shipping, card identity');
+const bt=s.belts.find(b=>b.x===7&&b.y===4);bt.item={name:'歩兵分隊',mods:[]};bt.phase=0;for(let n=0;n<7;n++)step(s,.2);assert.ok(s.belts.some(b=>b.item && b.item.name==='歩兵分隊' && b.item.mods?.includes('attack')));
+const sm=initialState();sm.hand.fill('占有');assert.equal(shippingCell(sm,15,15,'X'),false);assert.equal(setShippingGroups(sm,[[0,3],[1,2]]),'対角の飛び地区画は作れません');
+console.log('PASS: module applies attack upgrade once after processing delay, full hand backpressure, disconnected shipping groups refused');
