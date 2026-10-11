@@ -17,7 +17,32 @@ export function beltAt(s,x,y){return s.belts.find(b=>b.x===x&&b.y===y)}
 export function place(s,kind,x,y,rotation=0){if(!catalog[kind])return '不明な施設';const [w,h]=footprint(kind,rotation);if(x<0||y<0||x+w>SIZE||y+h>SIZE)return '盤面外です';if(s.money<catalog[kind].cost)return '建築資材が不足';const mining=!!catalog[kind].resource;if(mining&&!s.zones.some(z=>z.x===x&&z.y===y&&w===2&&h===2))return '採集施設は資源ゾーンに完全一致させてください';if(!mining&&!(x+w<=15||x>=17||y+h<=15||y>=17))return '中央出荷エリアには建設できません';if(!mining&&s.zones.some(z=>!(x+w<=z.x||x>=z.x+2||y+h<=z.y||y>=z.y+2)))return '資源ゾーンと重複します';if(s.buildings.some(b=>{const q=bounds(b);return !(x+w<=q.x||x>=q.x+q.w||y+h<=q.y||y>=q.y+q.h)}))return '施設と重複します';if(!catalog[kind].module&&s.belts.some(b=>within(b.x,b.y,x,y,w,h)))return 'ベルトと重複します';if(catalog[kind].module&&!beltAt(s,x,y))return '強化モジュールはベルト上に設置してください';if(catalog[kind].module&&s.buildings.some(b=>catalog[b.kind].module&&b.x===x&&b.y===y))return 'このベルトには強化モジュールがあります';s.money-=catalog[kind].cost;s.buildings.push({id:s.nextId++,kind,x,y,rotation,inventory:{},progress:0,cycle:0,mode:'auto',recipe:null,output:null,dispatched:0,warehouseMode:'random',warehouseFilter:'',warehouseClock:0,warehouseTurn:0,warehouseCool:0,warehouseOut:0});return null;}
 export function remove(s,x,y){const b=s.buildings.find(b=>catalog[b.kind].module&&b.x===x&&b.y===y)||buildingAt(s,x,y);if(b){s.buildings.splice(s.buildings.indexOf(b),1);return '施設を撤去しました（返還なし）';}const belt=beltAt(s,x,y);if(belt){s.belts.splice(s.belts.indexOf(belt),1);for(const q of s.belts){q.next=q.next.filter(p=>p!==belt.id);q.previous=q.previous.filter(p=>p!==belt.id);}return 'ベルトを撤去しました（上の素材も消失）';}return '撤去対象がありません';}
 // Belt endpoints: empty-to-empty paths; existing endpoints are junctions. Crossing the interior is forbidden.
-export function beltLine(s,x1,y1,x2,y2){if(x1!==x2&&y1!==y2)return '同じ行または列を選択してください';const dx=Math.sign(x2-x1),dy=Math.sign(y2-y1),n=Math.abs(x2-x1)+Math.abs(y2-y1);if(n===0)return '異なる終点を指定してください';const route=[];for(let i=0;i<=n;i++){const x=x1+i*dx,y=y1+i*dy,old=beltAt(s,x,y);if(within(x,y,15,15,2,2)||s.zones.some(z=>within(x,y,z.x,z.y,2,2))||buildingAt(s,x,y))return '施設・資源ゾーン上に敷設できません';if(old&&i!==0&&i!==n)return '交差・既存ベルトとの重複は禁止です';route.push({x,y,old});}const result=route.map(p=>{if(p.old)return p.old;const belt={id:s.nextId++,x:p.x,y:p.y,next:[],previous:[],item:null,phase:0,turn:0};s.belts.push(belt);return belt});for(let i=0;i<result.length-1;i++){const a=result[i],b=result[i+1];if(!a.next.includes(b.id))a.next.push(b.id);if(!b.previous.includes(a.id))b.previous.push(a.id);}return null;}
+// Facility-touch endpoints resolve to the adjacent conveyor cell. Never overwrite a facility.
+export function beltLine(s,x1,y1,x2,y2){
+ if(x1!==x2&&y1!==y2)return '同じ行または列を選択してください';
+ const dx=Math.sign(x2-x1),dy=Math.sign(y2-y1),n=Math.abs(x2-x1)+Math.abs(y2-y1);
+ if(!n)return '異なる終点を指定してください';
+ const a=buildingAt(s,x1,y1),z=buildingAt(s,x2,y2);
+ function accepts(build,entry){if(!build)return true;const c=catalog[build.kind];if(c.resource)return !entry;const d=dir(build.rotation);if(build.kind.startsWith('warehouse'))return entry?!(dx===d[0]&&dy===d[1]):dx===d[0]&&dy===d[1];return entry?dx===d[0]&&dy===d[1]:dx===d[0]&&dy===d[1];}
+ if(a&&!accepts(a,false))return '始点は施設の出力方向から指定してください';
+ if(z&&!accepts(z,true))return '終点は施設の入力方向へ接続してください';
+ let start=0,end=n;
+ if(a){while(start<=n&&buildingAt(s,x1+start*dx,y1+start*dy)===a)start++;}
+ if(z){while(end>=0&&buildingAt(s,x1+end*dx,y1+end*dy)===z)end--;}
+ if(start>end)return 'ベルトを置く空きマスがありません';
+ const route=[];
+ for(let i=start;i<=end;i++){
+  const x=x1+i*dx,y=y1+i*dy,old=beltAt(s,x,y);
+  if(x<0||y<0||x>=SIZE||y>=SIZE||within(x,y,15,15,2,2)||s.zones.some(v=>within(x,y,v.x,v.y,2,2))||buildingAt(s,x,y))return 'この経路には障害物があります';
+  if(old&&i!==start&&i!==end)return 'ベルト交差はできません';
+  route.push({x,y,old});
+ }
+ const result=route.map(q=>{if(q.old)return q.old;const belt={id:s.nextId++,x:q.x,y:q.y,next:[],previous:[],item:null,phase:0,turn:0,outDirection:dx===1?0:dy===1?1:dx===-1?2:3};s.belts.push(belt);return belt});
+ for(let i=0;i<result.length-1;i++){const a=result[i],b=result[i+1];if(!a.next.includes(b.id))a.next.push(b.id);if(!b.previous.includes(a.id))b.previous.push(a.id);}
+ // Terminal belts retain their intended direction for building input and shipping.
+ const last=result.at(-1);if(last)last.outDirection=dx===1?0:dy===1?1:dx===-1?2:3;
+ return null;
+}
 export function selectRecipe(s,id,recipeId){const b=s.buildings.find(b=>b.id===id);if(!b||!recipes[b.kind])return 'この施設はまだレシピ設定に対応していません';if(recipeId==='auto'){b.mode='auto';/* Maintain existing recipe until explicitly changed. */return null;}if(!recipes[b.kind].some(r=>r.id===recipeId))return '不明なレシピ';b.mode='manual';b.recipe=recipeId;b.progress=0;return null;}
 export const inventoryCount=(b,name)=>Object.entries(b.inventory).reduce((sum,[key,count])=>sum+(decodeItem(key).name===name?count:0),0);
 const has=(b,r)=>Object.entries(r.input).every(([k,n])=>inventoryCount(b,k)>=n);

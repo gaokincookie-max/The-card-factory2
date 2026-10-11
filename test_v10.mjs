@@ -1,0 +1,11 @@
+import {initialState,place,beltLine,beltAt,buildingAt} from './src/engine.js';
+import assert from 'node:assert/strict';
+const s=initialState();s.money=1000;
+assert.equal(place(s,'smelter',10,10,0),null);
+assert.equal(beltLine(s,6,10,10,10),null);
+assert(beltAt(s,9,10)); assert.equal(beltAt(s,10,10),undefined);
+assert.equal(beltLine(s,12,10,10,10)!==null,true);
+assert.equal(beltLine(s,10,10,14,10),null);
+assert(beltAt(s,11,10));assert.equal(beltAt(s,10,10),undefined);
+assert(buildingAt(s,10,10));
+console.log('PASS facility-touch connection input/output and invalid direction rejected');
