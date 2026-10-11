@@ -1,0 +1,116 @@
+{
+  "歩兵分隊": {
+    "hp": 100,
+    "attack": 10,
+    "interval": 1.5,
+    "reload": "100%"
+  },
+  "軽装歩兵": {
+    "hp": 70,
+    "attack": 8,
+    "interval": 0.8,
+    "reload": "100%"
+  },
+  "重装歩兵": {
+    "hp": 220,
+    "attack": 7,
+    "interval": 2,
+    "reload": "100%"
+  },
+  "機関銃班": {
+    "hp": 75,
+    "attack": 5,
+    "interval": 0.4,
+    "reload": "100%"
+  },
+  "狙撃班": {
+    "hp": 55,
+    "attack": 50,
+    "interval": 4.5,
+    "reload": "100%"
+  },
+  "衛生兵": {
+    "hp": 70,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  },
+  "野戦指揮官": {
+    "hp": 80,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  },
+  "補給班": {
+    "hp": 90,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  },
+  "整備車両": {
+    "hp": 160,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  },
+  "火炎放射班": {
+    "hp": 90,
+    "attack": 10,
+    "interval": 1,
+    "reload": "100%"
+  },
+  "突撃班": {
+    "hp": 110,
+    "attack": 14,
+    "interval": 1.2,
+    "reload": "100%"
+  },
+  "潜入班": {
+    "hp": 65,
+    "attack": 18,
+    "interval": 1.5,
+    "reload": "100%"
+  },
+  "軽戦車": {
+    "hp": 300,
+    "attack": 25,
+    "interval": 2,
+    "reload": "100%"
+  },
+  "重戦車": {
+    "hp": 600,
+    "attack": 38,
+    "interval": 3,
+    "reload": "100%"
+  },
+  "自走砲": {
+    "hp": 140,
+    "attack": 65,
+    "interval": 5,
+    "reload": "100%"
+  },
+  "対戦車班": {
+    "hp": 80,
+    "attack": 8,
+    "interval": 2,
+    "reload": "100%"
+  },
+  "対歩兵銃座": {
+    "hp": 100,
+    "attack": 3,
+    "interval": 0.3,
+    "reload": "100%"
+  },
+  "電子戦車両": {
+    "hp": 120,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  },
+  "防衛指揮車": {
+    "hp": 170,
+    "attack": 0,
+    "interval": null,
+    "reload": "100%"
+  }
+}
