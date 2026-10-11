@@ -119,3 +119,36 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 .combat-slot > strong,.combat-slot > small,.combat-slot > .combat-unit-health{position:relative;z-index:1}
 @media(max-width:800px) and (orientation:landscape){.recipe-card-grid{gap:5px;max-height:50dvh}.recipe-card-choice{padding:3px 2px}.recipe-card-choice .fcg-card{width:min(100%,70px)}.recipe-card-choice small{font-size:9px}.recipe-confirm{padding:8px 4px}}
 @media(max-width:550px){.recipe-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v1.9 combat cards: same 5:7 ratio as the shared card, with reload shown as a rising brightness field. */
+.combat-board{align-items:start;justify-items:stretch;gap:clamp(3px,.7vw,9px)}
+.combat-slot{width:100%;height:auto;min-height:0;aspect-ratio:var(--fcg-card-ratio);padding:0;display:flex;align-items:stretch;justify-content:stretch;border-radius:8px;isolation:isolate;position:relative;overflow:hidden}
+.combat-slot:not(:has(.combat-card-face)){display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+.combat-card-face{display:flex;flex-direction:column;position:absolute;inset:0;background:linear-gradient(155deg,#496477,#233e53 60%,#172e43);isolation:isolate}
+.combat-slot.foe .combat-card-face{background:linear-gradient(155deg,#704c5b,#462c3a 60%,#321e2e)}
+.combat-card-name{font-size:clamp(8px,1.1vw,13px);font-weight:750;text-align:center;padding:5px 2px 0;z-index:3;line-height:1.15;overflow-wrap:anywhere}
+.combat-card-art{position:absolute;inset:16% 0 17%;display:flex;align-items:center;justify-content:center;color:rgba(222,241,245,.3);font-size:clamp(22px,4vw,48px);z-index:1}
+.combat-card-mods{position:absolute;top:24%;right:3px;z-index:3;font-size:clamp(9px,1vw,12px);color:#b7edc8}
+.combat-card-dim{position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(to top,transparent var(--charge),rgba(5,13,22,.58) var(--charge));transition:background 80ms linear}
+.combat-card-bottom{position:absolute;bottom:3px;left:4px;right:4px;z-index:4;display:flex;flex-direction:column;gap:3px;padding:3px;background:rgba(8,20,29,.65);border-radius:4px}
+.combat-card-hptext{font-size:clamp(8px,.9vw,11px);color:white;line-height:1.1;font-weight:650;text-align:center}
+.combat-card-bottom .combat-unit-health{height:6px;width:100%;flex:none}
+.combat-card-dead{color:#ffe0a0;font-size:9px}
+.combat-slot.dead .combat-card-dim{background:rgba(12,17,24,.7)}
+.combat-slot.dead .combat-card-face{filter:grayscale(.5)}
+.combat-slot.drop-ready{outline:2px solid #76deb7;outline-offset:-2px}
+.combat-confirm-overlay[hidden]{display:none!important}
+.combat-confirm-overlay{position:fixed;inset:0;background:rgba(3,11,18,.74);z-index:15000;display:flex;align-items:center;justify-content:center;padding:14px}
+.combat-confirm-dialog{width:min(430px,96vw);max-height:90dvh;overflow-y:auto;background:#1b3444;border:1px solid #8b9db0;border-radius:13px;padding:20px;color:#f1f7f9;box-shadow:0 14px 45px rgba(0,0,0,.45)}
+.combat-confirm-dialog h3{margin:0 0 12px;font-size:18px}.combat-confirm-dialog p{font-size:13px;line-height:1.55}
+.combat-confirm-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.combat-confirm-actions button{padding:10px 16px;border-radius:8px;cursor:pointer;border:1px solid #668298;background:#2b4657;color:white}
+.combat-confirm-actions .combat-destruct-accept{background:#a1394d;border-color:#e07d8b;font-weight:700}
+@media(max-width:800px) and (orientation:landscape){.combat-slot{min-height:0;padding:0}.combat-card-name{font-size:clamp(8px,1vw,11px)}.combat-card-bottom{left:2px;right:2px;bottom:2px;padding:2px}.combat-card-hptext{font-size:8px}}
+
+/* Keep the recipe-confirm action visible on the very first row, no scrolling needed. */
+.facility-right-top{display:flex;align-items:center;gap:6px;justify-content:space-between;min-width:0}
+.facility-right-top .facility-selected-recipe{font-size:clamp(10px,1.1vw,13px);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.facility-right-top .recipe-confirm{width:auto;flex:0 1 auto;padding:7px 9px;margin:0;min-height:34px;white-space:normal;font-size:clamp(10px,1.1vw,12px);line-height:1.2}
+.facility-right-top .info-button{flex:none;padding:5px 9px}
+@media(max-width:700px){.facility-right-top .recipe-confirm{max-width:44%;padding:6px 5px}}
