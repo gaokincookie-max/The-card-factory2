@@ -49,3 +49,6 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 #runtimeDiagnostics{position:fixed;top:4px;left:15%;right:15%;background:#9a1728;color:white;padding:12px 15px;border-radius:8px;z-index:110;font-size:13px}
 #runtimeDiagnostics[hidden]{display:none}
 @media(max-width:800px){#board{grid-template-columns:repeat(32,38px)!important;grid-template-rows:repeat(32,38px)}#board>.cell{width:38px!important;height:38px!important}}
+
+/* v0.9: direction overlay is absolutely placed, never participates in grid auto-placement */
+#board>.facility-direction-overlay{position:absolute!important;grid-column:auto!important;grid-row:auto!important;box-sizing:border-box;pointer-events:none!important}

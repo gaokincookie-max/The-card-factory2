@@ -15,3 +15,12 @@ Pythonの単純サーバーとChromiumで基本操作の確認を実施。オン
 
 
 v0.8: simulation pulse is independent of board rendering; facility input/output are displayed on perimeter (blue input, orange output). Errors are visible in red banner.
+
+## v0.9 不具合修正（2026-10-11）
+- 加工炉・カード工場の内部在庫へ、`{"name":"鉄鉱石","mods":[]}` のような JSON 文字列がキーとして保存され、レシピの素材名照合に失敗していた問題を修正。通常施設では素材名で在庫を管理し、倉庫のみ強化情報を含む個体識別を利用します。
+- 旧形式の JSON キーが残っていても素材数を認識し、製造完了時に消費できる互換処理を追加。
+- インベントリや生産画面の素材数は同じ共通判定を使用。表示に JSON が露出する問題も補正。
+- 入出力マーカーを CSS グリッドの追加アイテムから絶対配置のオーバーレイに変更。盤面のセルを押しずらさない構成にしました。
+- `test_regression_v09.mjs` で素材搬入、旧形式の在庫消費、生産完了をテスト。
+
+注意: 実ブラウザでの多数の施設とスクロールを組み合わせた視覚検証は未完了です。問題が続く場合は、さらにブラウザ上での再現手順に沿った検証が必要です。
