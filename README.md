@@ -12,3 +12,6 @@
 
 ## 検証
 Pythonの単純サーバーとChromiumで基本操作の確認を実施。オンライン・戦闘は未実装です。
+
+
+v0.8: simulation pulse is independent of board rendering; facility input/output are displayed on perimeter (blue input, orange output). Errors are visible in red banner.

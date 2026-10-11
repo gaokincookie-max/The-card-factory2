@@ -33,3 +33,19 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 .cell.preview-good{box-shadow:inset 0 0 0 2px #acffe8;background:rgba(37,193,140,.7)!important}
 .cell.preview-origin{font-size:11px;font-weight:900;white-space:normal;overflow:visible;z-index:4;text-shadow:0 1px 3px #001}
 .cell.belt{box-shadow:inset 0 0 0 2px #d49b49;font-weight:900;font-size:23px;color:#fff6d2!important}
+
+/* v0.8: directional borders span the ENTIRE footprint, not a cramped IN→OUT label */
+#board{position:relative;grid-template-columns:repeat(32,42px)!important;grid-template-rows:repeat(32,42px);gap:1px;isolation:isolate;}
+#board>.cell{height:42px!important;width:42px!important;font-size:20px;font-weight:700}
+.facility-direction-overlay{z-index:4;pointer-events:none;position:relative;outline:2px solid #c9d8e6;outline-offset:-2px;min-width:0;min-height:0}
+.facility-direction-overlay.direction-preview{opacity:.85;outline:3px dashed #70e6b1;background:#35c99329}
+.direction-marker{position:absolute;z-index:5;min-width:38px;min-height:23px;display:flex;align-items:center;justify-content:center;border:2px solid;border-radius:5px;font-size:13px;font-weight:900;white-space:nowrap;box-shadow:0 1px 5px #000b;line-height:1;background:#102538}
+.direction-marker.in{color:#c9efff;border-color:#55c9ff;background:#16425c}
+.direction-marker.out{color:#ffe6bc;border-color:#ffb85c;background:#734119}
+.direction-marker.left{left:-3px;top:50%;transform:translate(-40%,-50%)}
+.direction-marker.right{right:-3px;top:50%;transform:translate(40%,-50%)}
+.direction-marker.top{top:-3px;left:50%;transform:translate(-50%,-48%)}
+.direction-marker.bottom{bottom:-3px;left:50%;transform:translate(-50%,48%)}
+#runtimeDiagnostics{position:fixed;top:4px;left:15%;right:15%;background:#9a1728;color:white;padding:12px 15px;border-radius:8px;z-index:110;font-size:13px}
+#runtimeDiagnostics[hidden]{display:none}
+@media(max-width:800px){#board{grid-template-columns:repeat(32,38px)!important;grid-template-rows:repeat(32,38px)}#board>.cell{width:38px!important;height:38px!important}}
