@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {initialState} from './src/engine.js';
+import {createBattle,deploy,deployFromHand,advanceBattle} from './src/battle.js';
+const factory=initialState(), b=createBattle(factory);
+b.stats={'歩兵分隊':{hp:100,attack:10,interval:1.5},'軽装歩兵':{hp:70,attack:8,interval:.8},'機関銃班':{hp:75,attack:5,interval:.4},'重装歩兵':{hp:220,attack:7,interval:2},'対戦車班':{hp:70,attack:8,interval:1}};
+factory.hand[0]={name:'歩兵分隊',mods:[]};
+assert.equal(deployFromHand(b,0,2,0),true);
+assert.equal(factory.hand[0],null);
+assert.equal(b.units[0][2][0].remaining,150);
+advanceBattle(b,119);
+assert.equal(b.units[0][2][0].remaining,150);
+assert.equal(b.units[1].flat().filter(Boolean).length,0);
+advanceBattle(b,1.1);
+assert.ok(b.units[1].flat().filter(Boolean).length>0);
+assert.equal(deploy(b,0,{name:'歩兵分隊'},2,0),false);
+advanceBattle(b,10);
+assert.ok(b.time>130);
+console.log('PASS battle deployment, preparation, CPU spawn, timing');

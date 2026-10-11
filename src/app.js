@@ -1,8 +1,10 @@
+import {createBattle,loadBattleStats,advanceBattle,mountBattle} from './battle.js';
 import {makeCard,openCardDetail,bindCardHold,registerCardData} from './card-ui.js';
 import{SIZE,catalog,recipes,initialState,place,remove,step,beltLine,footprint,selectRecipe,buildingAt,beltAt,setWarehouseMode,useHand,setShippingGroups,warehouseStock,itemName,itemMods,inventoryCount,decodeItem}from './engine.js';
 const state=initialState(),board=document.querySelector('#board'),sel=document.querySelector('#kind'),hint=document.querySelector('#hint'),log=document.querySelector('#log');let tool='inspect',beltStart=null,beltHover=null,selected=null,pending=null,category='gather';let liveFacility=null;
 for(const[k,v]of Object.entries(catalog)){const o=document.createElement('option');o.value=k;o.textContent=`${v.name} (${v.cost})`;sel.append(o)}
 const groups={gather:['iron','copper','oil','chem'],process:['smelter','assembler'],factory:['infantry','vehicle','special','support'],storage:['warehouseSmall','warehouseLarge'],boost:['moduleAttack','moduleHP','moduleReload']};
+const battle=createBattle(state);const battleUI=mountBattle(battle,document.querySelector('#battlePreview'),()=>{});loadBattleStats(battle);
 function drawHand(){const root=document.querySelector('#handSlots');root.replaceChildren();state.hand.forEach((item,i)=>{const slot=document.createElement('div');slot.className='hand-cell';const index=document.createElement('small');index.textContent=`SLOT ${i+1}`;slot.append(index);if(item){const card=makeCard(item,{onOpen:()=>openCardDetail(item)});slot.append(card);const discard=document.createElement('button');discard.className='hand-discard';discard.textContent='テスト破棄';discard.onclick=()=>{useHand(state,i);note('手札を1枚破棄しました（テスト操作）');drawHand()};slot.append(discard)}else{const empty=document.createElement('div');empty.className='empty-hand';empty.textContent='空き';slot.append(empty)}root.append(slot)})}
 
 function drawDock(){const dock=document.querySelector('#buildingCards');dock.replaceChildren();for(const kind of groups[category]){const v=catalog[kind];const b=document.createElement('button');b.type='button';b.className='build-card'+(tool==='build'&&sel.value===kind?' active':'');b.innerHTML=`<span class="symbol">${v.resource?'◆':kind.includes('warehouse')?'▤':'▣'}</span><span><span class="name">${v.name}</span><small>${v.size.join('×')} ・資材 ${v.cost}</small></span>`;b.onclick=()=>{sel.value=kind;tool='build';syncBeltButton();pending=null;beltStart=null;beltHover=null;showFloating(null);note(`${v.name}：場所をタップし、✓で設置してください`);drawDock();placement()};dock.append(b)}document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.category===category));}
@@ -99,14 +101,14 @@ function updateLiveFacility(){
  for(const tile of view.materials?.children||[]){const name=tile.querySelector('.material-number')?.dataset.material;if(name){const span=tile.querySelector('.material-number');span.textContent=`${inventoryCount(b,name)} / ${span.dataset.qty}`;}}
 }
 function simulationPulse(){const now=performance.now();let elapsed=Math.min(Math.max((now-lastSimulation)/1000,0),0.5);lastSimulation=now;
-  while(elapsed>0.000001){const delta=Math.min(elapsed,0.05);try{step(state,delta)}catch(error){if(simulationErrors++<5)reportRuntime('進行処理エラー',error);break;}elapsed-=delta;}
+  while(elapsed>0.000001){const delta=Math.min(elapsed,0.05);try{step(state,delta);advanceBattle(battle,delta)}catch(error){if(simulationErrors++<5)reportRuntime('進行処理エラー',error);break;}elapsed-=delta;}
   updateHud();updateLiveFacility();
 }
 setInterval(simulationPulse,50);
 function frame(now){requestAnimationFrame(frame);if(now-lastDraw<180)return;lastDraw=now;
-  try{draw();if(battlePreviewOpen)drawHand();positionFloat();}catch(error){if(renderErrors++<5)reportRuntime('描画エラー',error);}
+  try{draw();if(battlePreviewOpen)battleUI.render();positionFloat();}catch(error){if(renderErrors++<5)reportRuntime('描画エラー',error);}
 }
-let battlePreviewOpen=false;document.querySelector('#battleButton').onclick=()=>{battlePreviewOpen=!battlePreviewOpen;document.querySelector('#battlePreview').hidden=!battlePreviewOpen;document.querySelector('.workarea').hidden=battlePreviewOpen;document.querySelector('#dock').hidden=battlePreviewOpen;document.querySelector('#battleButton').textContent=battlePreviewOpen?'▦ 工業画面へ戻る':'⚔ 戦闘画面（仮）';note(battlePreviewOpen?'戦闘画面の仮表示です。工場シミュレーションは継続します':'工業画面に戻りました');drawHand()};drawDock();drawHand();placement();note('下部から採集施設を選び、資源ゾーンをクリックして仮配置→決定してください。');draw();requestAnimationFrame(frame);
+let battlePreviewOpen=false;document.querySelector('#battleButton').onclick=()=>{battlePreviewOpen=!battlePreviewOpen;document.querySelector('#battlePreview').hidden=!battlePreviewOpen;document.querySelector('.workarea').hidden=battlePreviewOpen;document.querySelector('#dock').hidden=battlePreviewOpen;document.querySelector('#battleButton').textContent=battlePreviewOpen?'▦ 工業画面へ戻る':'⚔ 戦闘画面';if(battlePreviewOpen)battleUI.render();};drawDock();placement();note('下部から採集施設を選び、資源ゾーンをクリックして仮配置→決定してください。');draw();requestAnimationFrame(frame);
 
 
 registerCardData().catch(error=>console.warn('Card details unavailable',error));
