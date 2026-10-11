@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {initialState,place,beltLine,step,warehouseStock,encodeItem} from './src/engine.js';
+const s=initialState();
+assert.equal(place(s,'moduleAttack',10,10,0),null);
+assert.equal(place(s,'moduleHP',10,10,0),'施設と重複します');
+assert.equal(beltLine(s,9,10,10,10),null);
+assert.equal(beltLine(s,10,10,12,10),null);
+const b=s.buildings[0];
+b.inventory[encodeItem({name:'歩兵分隊',mods:[]})]=1;
+for(let n=0;n<6;n++)step(s,0.2);
+assert.ok(b.output?.mods?.includes('attack')||s.belts.some(v=>v.item?.mods?.includes('attack')));
+for(let n=0;n<6;n++)step(s,0.2);
+assert.ok(s.belts.some(v=>v.item?.mods?.includes('attack')));
+assert.equal(place(s,'warehouseSmall',15,10),null);
+console.log('PASS v1.6: standalone upgrader, card identity and outbound');
