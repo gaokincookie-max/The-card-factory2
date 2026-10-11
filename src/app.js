@@ -49,7 +49,12 @@ function addDirectionOverlay(kind,x,y,rotation,preview){
  }
  board.append(el);
 }
-let lastDraw=0;function draw(){const bmap=new Map(),tmap=new Map(state.belts.map(b=>[`${b.x},${b.y}`,b]));for(const b of state.buildings){const[w,h]=footprint(b.kind,b.rotation);for(let y=b.y;y<b.y+h;y++)for(let x=b.x;x<b.x+w;x++)bmap.set(`${x},${y}`,b);}cells.forEach((cell,i)=>{const x=i%SIZE,y=Math.floor(i/SIZE),key=`${x},${y}`;cell.className='cell';cell.textContent='';const shipping=x>=15&&x<17&&y>=15&&y<17;if(shipping){cell.classList.add('shipping');cell.textContent='⇧';}const zone=state.zones.some(z=>x>=z.x&&x<z.x+2&&y>=z.y&&y<z.y+2);if(zone){cell.classList.add('zone');cell.textContent='◇';}const belt=tmap.get(key);if(belt){cell.classList.add('belt');const next=state.belts.find(t=>t.id===belt.next?.[0]);const dx=next?.x-x,dy=next?.y-y;const incoming=(belt.previous||[]).length,outgoing=(belt.next||[]).length;
+let lastDraw=0;function draw(){const bmap=new Map(),tmap=new Map(state.belts.map(b=>[`${b.x},${b.y}`,b]));for(const b of state.buildings){const[w,h]=footprint(b.kind,b.rotation);for(let y=b.y;y<b.y+h;y++)for(let x=b.x;x<b.x+w;x++)bmap.set(`${x},${y}`,b);}cells.forEach((cell,i)=>{const x=i%SIZE,y=Math.floor(i/SIZE),key=`${x},${y}`;
+const cachedB=bmap.get(key),cachedT=tmap.get(key);
+const previewB=pending&&tool==='build'&&(()=>{const[w,h]=footprint(sel.value,state.rotation);return x>=pending.x&&x<pending.x+w&&y>=pending.y&&y<pending.y+h})(),previewT=beltStart&&beltHover&&(beltStart.x===beltHover.x||beltStart.y===beltHover.y)&&x>=Math.min(beltStart.x,beltHover.x)&&x<=Math.max(beltStart.x,beltHover.x)&&y>=Math.min(beltStart.y,beltHover.y)&&y<=Math.max(beltStart.y,beltHover.y);
+const fingerprint=[cachedB?.id,cachedB?.kind,cachedB?.rotation,cachedT?.id,cachedT?.item?itemName(cachedT.item):'',(cachedT?.next||[]).join(','),(cachedT?.previous||[]).join(','),previewB?sel.value:'',previewT?'t':'',beltStart?.x===x&&beltStart?.y===y?'s':'',selected?.x===x&&selected?.y===y?'x':'',pending?.x===x&&pending?.y===y&&tool==='build'?'o':'',state.rotation].join('|');
+if(cell._drawFingerprint===fingerprint)return;cell._drawFingerprint=fingerprint;
+cell.className='cell';cell.textContent='';const shipping=x>=15&&x<17&&y>=15&&y<17;if(shipping){cell.classList.add('shipping');cell.textContent='⇧';}const zone=state.zones.some(z=>x>=z.x&&x<z.x+2&&y>=z.y&&y<z.y+2);if(zone){cell.classList.add('zone');cell.textContent='◇';}const belt=tmap.get(key);if(belt){cell.classList.add('belt');const next=state.belts.find(t=>t.id===belt.next?.[0]);const dx=next?.x-x,dy=next?.y-y;const incoming=(belt.previous||[]).length,outgoing=(belt.next||[]).length;
  const junction=incoming>1||outgoing>1;
  if(junction){
    cell.classList.add('belt-junction',outgoing>1?'junction-split':'junction-merge');
@@ -105,8 +110,8 @@ function simulationPulse(){const now=performance.now();let elapsed=Math.min(Math
   updateHud();updateLiveFacility();
 }
 setInterval(simulationPulse,50);
-function frame(now){requestAnimationFrame(frame);if(now-lastDraw<180)return;lastDraw=now;
-  try{draw();if(battlePreviewOpen)battleUI.render();positionFloat();}catch(error){if(renderErrors++<5)reportRuntime('描画エラー',error);}
+function frame(now){requestAnimationFrame(frame);if(now-lastDraw<(battlePreviewOpen?200:350))return;lastDraw=now;
+  try{if(battlePreviewOpen){battleUI.render()}else{draw();positionFloat()}}catch(error){if(renderErrors++<5)reportRuntime('描画エラー',error);}
 }
 let battlePreviewOpen=false;document.querySelector('#battleButton').onclick=()=>{battlePreviewOpen=!battlePreviewOpen;document.querySelector('#battlePreview').hidden=!battlePreviewOpen;document.querySelector('.workarea').hidden=battlePreviewOpen;document.querySelector('#dock').hidden=battlePreviewOpen;document.querySelector('#battleButton').textContent=battlePreviewOpen?'▦ 工業画面へ戻る':'⚔ 戦闘画面';if(battlePreviewOpen)battleUI.render();};drawDock();placement();note('下部から採集施設を選び、資源ゾーンをクリックして仮配置→決定してください。');draw();requestAnimationFrame(frame);
 
