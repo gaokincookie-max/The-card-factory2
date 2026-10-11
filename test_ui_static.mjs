@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const app=fs.readFileSync(new URL('./src/app.js',import.meta.url),'utf8');
+const html=fs.readFileSync(new URL('./index.html',import.meta.url),'utf8');
+assert.match(app,/if\(log\)log\.textContent/);
+assert.ok(!html.includes('id="log"'));
+assert.match(app,/if\(!err\)\{selected=null;pending=null;tool='inspect'/);
+assert.match(app,/belt-preview/);
+assert.ok(!app.includes("actionButton('i'"));
+assert.ok(!app.includes("actionButton('▤'"));
+console.log('PASS: missing log guard; construction completion; belt preview; facility direct modal controls');

@@ -26,3 +26,10 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 @media(max-width:850px){#board{grid-template-columns:repeat(32,38px)!important}.cell{width:38px!important;height:38px!important}.board-scroll{min-height:180px}}
 
 .cell.facility-origin{font-size:10px!important;letter-spacing:-1px;white-space:nowrap;text-shadow:0 1px 3px #000}.cell.facility-origin.iron,.cell.facility-origin.copper,.cell.facility-origin.oil,.cell.facility-origin.chem{font-size:15px!important}
+
+/* v0.7: preview routes visually before confirmation, and distinguish directions */
+.cell.belt-preview,.cell.belt-preview:nth-child(even){background:rgba(243,172,60,.55)!important;color:#fff7d6!important;box-shadow:inset 0 0 0 2px #ffd18a;z-index:2;font-size:21px;font-weight:900}
+.cell.belt-start{box-shadow:inset 0 0 0 3px #fff4a1!important}
+.cell.preview-good{box-shadow:inset 0 0 0 2px #acffe8;background:rgba(37,193,140,.7)!important}
+.cell.preview-origin{font-size:11px;font-weight:900;white-space:normal;overflow:visible;z-index:4;text-shadow:0 1px 3px #001}
+.cell.belt{box-shadow:inset 0 0 0 2px #d49b49;font-weight:900;font-size:23px;color:#fff6d2!important}
