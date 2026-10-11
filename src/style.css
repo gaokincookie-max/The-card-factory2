@@ -184,3 +184,28 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
  .combat-cast-zone{height:8px;min-height:8px!important}.combat-cast-zone small{display:none}.combat-footer{margin-top:3px;padding-top:2px}.combat-hand-cell{min-width:59px;width:65px;padding:2px}.combat-hand-cell .fcg-card{width:55px}.combat-hand-cell small{font-size:8px}
  .combat-hand{padding:2px 0}.combat-footer #combatEvents{font-size:9px}
 }
+
+/* v2.1: Balanced combat layout. Widen cards slightly without stretching the battlefield.
+   Constrain by viewport HEIGHT so four unit ranks and the hand remain usable. */
+.combat-view{max-width:1040px;margin:3px auto 6px;padding:7px 10px}
+.combat-board{
+  width:fit-content;max-width:100%;
+  grid-template-columns:repeat(5,minmax(0,min(104px,10.4dvh)));
+  gap:clamp(5px,.65vw,9px);
+}
+.combat-slot{max-width:104px;aspect-ratio:5/7}
+.combat-battlefield{gap:2px}
+.combat-enemy-title{margin:3px 0 2px}
+.combat-cast-zone{min-height:12px!important;height:12px;margin:2px 0}
+.combat-footer{margin-top:4px;padding-top:4px}
+.combat-hand{padding:3px 0}
+.combat-footer #combatSelection{font-size:11px}
+/* Landscape phones: use a modest size increase rather than a full-width board. */
+@media(max-height:650px) and (orientation:landscape){
+ .combat-view{max-width:100%;padding:3px 6px;margin:0 auto}
+ .combat-board{grid-template-columns:repeat(5,minmax(0,min(74px,9dvh)));gap:4px}
+ .combat-slot{max-width:74px}
+ .combat-battlefield{gap:1px}
+ .combat-cast-zone{min-height:7px!important;height:7px;margin:1px 0}
+ .combat-footer{margin-top:2px;padding-top:2px}
+}
