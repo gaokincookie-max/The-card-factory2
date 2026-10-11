@@ -63,3 +63,20 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 .production-gauge span{width:58px;height:58px;border-radius:50%;background:#163146;display:grid;place-items:center;font-size:14px;font-weight:800}
 .material-tile .mini-card,.product-tile .mini-card{max-width:130px}
 #board .cell.belt-preview{background:#d1a45e8c!important;outline:2px dashed #ffe1a7}
+
+/* v1.1: belt mode is a distinct toggle alongside category tabs */
+.dock-upper .dock-belt{flex:0 0 auto;margin:0 0 0 12px;padding:9px 15px;border:1px solid #6f9db2;border-radius:9px;background:#233f53;color:#e5f4ff;font-weight:750;white-space:nowrap}
+.dock-upper .dock-belt.active{background:#9e6c29;color:#fff7e4;border-color:#f2cb77;box-shadow:0 0 0 2px #f2cb7735}
+.dock-collapsed .dock-upper .dock-belt{display:none!important}
+.production-gauge{transition:background 120ms linear}
+.production-gauge.is-stopped{filter:saturate(.45)}
+/* junctions are autonomous routing nodes: blue input indicators, amber outputs */
+.cell.belt-junction,.cell.belt-junction:nth-child(even){background:#284d66!important;border:2px solid #a3d7df!important;color:#fff;isolation:isolate;overflow:visible}
+.cell.belt-junction.junction-split{border-color:#e7bb70!important}
+.junction-symbol{display:block;font-size:15px;font-weight:900;line-height:19px;text-shadow:0 1px 2px #071822}
+.junction-ports{position:absolute;left:1px;right:1px;bottom:1px;display:flex;gap:1px;justify-content:center;align-items:center;pointer-events:none}
+.junction-ports b{font-size:10px;line-height:12px;min-width:12px;border-radius:2px;color:white}
+.junction-ports .junction-in{background:#236d9d}
+.junction-ports .junction-out{background:#b36d28}
+.junction-cargo{position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:#fff1ba;border:1px solid #162c3b}
+@media(max-width:850px){.dock-upper .dock-belt{padding:7px 9px;margin-left:0;font-size:11px}}
