@@ -152,3 +152,35 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 .facility-right-top .recipe-confirm{width:auto;flex:0 1 auto;padding:7px 9px;margin:0;min-height:34px;white-space:normal;font-size:clamp(10px,1.1vw,12px);line-height:1.2}
 .facility-right-top .info-button{flex:none;padding:5px 9px}
 @media(max-width:700px){.facility-right-top .recipe-confirm{max-width:44%;padding:6px 5px}}
+
+/* v2.0 compact landscape battle stage and consistent left-side dock handle. */
+.combat-view{max-width:1000px;margin:5px auto 9px;padding:9px 12px}
+.combat-top h2{font-size:14px}
+.combat-top p{margin:3px 0;font-size:11px}
+.combat-hp span{padding:5px 8px}
+.combat-enemy-title{margin:4px 0;font-size:10px}
+.combat-battlefield{gap:3px;align-items:center}
+.combat-board{width:fit-content;max-width:100%;margin-inline:auto;grid-template-columns:repeat(5,minmax(0,min(95px,9.5dvh)));gap:clamp(2px,.5vw,6px)}
+.combat-slot{width:100%;max-width:95px;min-width:0;min-height:0;aspect-ratio:5/7}
+.combat-cast-zone{height:16px;min-height:16px!important}
+.combat-cast-zone small{font-size:8px}
+.combat-footer{margin-top:6px;padding-top:6px}
+.combat-hand{padding:5px 0;gap:5px}
+.combat-hand-cell{width:95px;min-width:80px;padding:3px;gap:2px}
+.combat-hand-cell .fcg-card{width:min(80px,100%);min-width:0}
+.combat-hand-cell small{font-size:9px}
+.combat-footer #combatEvents{margin:3px 0;min-height:0}
+#dockToggle{order:-10;flex:none;margin-left:0!important;border-radius:9px 9px 9px 2px;background:#235466;border:1px solid #69b6c0;box-shadow:-3px 1px 0 #112839;padding:8px 11px;white-space:nowrap}
+.dock-upper{justify-content:flex-start}
+.dock-collapsed{padding:5px 6px;border-radius:0 12px 0 0;border-right:1px solid #69b6c0}
+.dock-collapsed #dockToggle{margin:0!important;border-radius:0 10px 10px 0;box-shadow:3px 0 0 #122338}
+.warehouse-mode-buttons .warehouse-active-filter{width:100%;flex:0 0 100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#143a44;border:1px solid #58b9ad;border-radius:8px}
+.warehouse-active-filter small{color:#a9c9d4}.warehouse-active-filter strong{color:#aff3d9;overflow-wrap:anywhere;text-align:right}
+.warehouse-mode-buttons button.active{border-color:#6ee5bf;background:#246e65;color:#ffffff;box-shadow:inset 0 0 0 1px #6ee5bf}
+@media(max-height:650px) and (orientation:landscape){
+ .combat-view{padding:4px 8px;margin:0 auto}.combat-top h2{font-size:12px}.combat-top p{font-size:9px}.combat-hp span{padding:3px 5px;font-size:10px}
+ .combat-enemy-title{margin:2px 0}.combat-battlefield{gap:1px}.combat-board{grid-template-columns:repeat(5,minmax(0,min(65px,8dvh)));gap:3px}
+ .combat-card-name{font-size:8px;padding:2px 1px 0}.combat-card-art{font-size:15px}.combat-card-bottom{gap:1px;padding:1px}.combat-card-bottom .combat-unit-health{height:4px}
+ .combat-cast-zone{height:8px;min-height:8px!important}.combat-cast-zone small{display:none}.combat-footer{margin-top:3px;padding-top:2px}.combat-hand-cell{min-width:59px;width:65px;padding:2px}.combat-hand-cell .fcg-card{width:55px}.combat-hand-cell small{font-size:8px}
+ .combat-hand{padding:2px 0}.combat-footer #combatEvents{font-size:9px}
+}
