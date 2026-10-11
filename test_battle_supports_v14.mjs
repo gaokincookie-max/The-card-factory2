@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {initialState} from './src/engine.js';
 import {createBattle,deploy,activateSupportFromHand,advanceBattle} from './src/battle.js';
-const f=initialState(), b=createBattle(f);
+const f=initialState(), b=createBattle(f);b.time=120; // Old test predates preparation-phase interference restriction.
+
 b.stats={'歩兵分隊':{hp:100,attack:10,interval:1.5},'軽戦車':{hp:300,attack:25,interval:2}};
 assert(deploy(b,0,{name:'歩兵分隊'},0,0));assert(deploy(b,1,{name:'軽戦車'},0,0));
 function card(name,i=0){f.hand[i]={name,mods:[]};}

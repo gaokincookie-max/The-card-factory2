@@ -94,3 +94,28 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
 
 /* v1.6 compact live battle HUD */
 .topbar{min-height:58px;padding:5px 10px;gap:8px}.brand{min-width:128px}.brand-mark{font-size:18px;padding:4px}.brand strong{font-size:12px}.brand small{display:none}.battle-hud{min-width:0;flex:1;width:auto;gap:7px;justify-content:center;max-width:760px}.core-mini{width:70px;min-width:52px;display:flex;flex-direction:column;gap:2px;color:#bdd9e8;font-size:10px}.core-mini small{font-size:9px}.core-mini b{font-size:14px}.core-mini.enemy{text-align:right}.core-mini.enemy .hp i{background:#ce707c}.army-mini{display:grid;grid-template-columns:repeat(5,minmax(8px,1fr));grid-template-rows:repeat(2,14px);gap:3px;flex:1;max-width:184px;min-width:70px}.mini-slot{background:#263b4a;border:1px solid #577184;border-radius:3px}.army-mini:first-of-type .mini-slot.filled{background:#55b3c2}.army-mini .mini-slot.filled{background:#c46c79}.army-mini .mini-slot.debris{background:#9b8c55;border-style:dashed}.right-head{gap:5px}.currency{min-width:68px;padding:5px}.currency span{font-size:8px}.currency strong{font-size:15px}.battle-button{padding:6px 8px;font-size:11px}.warehouse-mode-buttons{display:flex;gap:5px;flex-wrap:wrap}.warehouse-mode-buttons button{padding:8px 5px;font-size:11px;flex:1}.warehouse-chooser{position:sticky;bottom:6px;background:#203c4c;border:2px solid #76a8b5;border-radius:9px;padding:12px;display:flex;gap:6px;flex-wrap:wrap;max-height:42dvh;overflow:auto;z-index:5}.warehouse-chooser>strong{flex:1 0 70%}.warehouse-chooser button{padding:6px 9px}.facility-left h3{margin:0 0 10px}.facility-right .materials{justify-content:center}@media(max-width:850px){.topbar{padding:3px 5px;gap:4px}.brand{min-width:0}.brand strong{font-size:9px}.battle-hud{gap:4px}.core-mini{width:44px;min-width:34px}.core-mini small{font-size:7px}.core-mini b{font-size:11px}.army-mini{min-width:55px;grid-template-rows:repeat(2,11px);gap:2px}.versus{font-size:9px}.right-head{gap:3px}.currency{min-width:45px}.currency span{display:none}.currency strong{font-size:12px}.battle-button{font-size:9px;padding:5px}.brand-mark{display:none}}
+
+/* v1.7: self-destruct remains available only in an allied live-unit detail panel. */
+.self-destruct-action{border:1px solid #ce6876;background:#572e39;color:#fff;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px}.self-destruct-action:hover{background:#793644}
+
+/* v1.8 unified card aspect ratio and recipe preview/confirm workflow */
+:root{--fcg-card-ratio:5 / 7}
+.fcg-card,.fcg-card.compact{aspect-ratio:var(--fcg-card-ratio)}
+.recipe-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start;padding:6px 2px;max-height:min(53dvh,420px);overflow-y:auto}
+.recipe-card-choice{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;padding:5px 3px;border:1px solid #4d6c82;border-radius:9px;background:#142b39;gap:3px}
+.recipe-card-choice.selected{border-color:#78e4c5;box-shadow:0 0 0 2px #78e4c547;background:#1b4845}
+.recipe-card-choice.configured:before{content:'●';position:absolute;top:1px;left:5px;color:#77efba;z-index:2;font-size:12px}
+.recipe-card-choice .fcg-card{width:min(100%,94px);min-width:0;max-width:94px;min-height:0;height:auto;padding:13px 4px 5px;border-radius:8px}
+.recipe-card-choice .fcg-name{font-size:clamp(10px,1vw,13px)}
+.recipe-card-choice small{font-size:10px;text-align:center}
+.recipe-current{color:#83e8bd}.recipe-status{color:#b4c6d1}
+.recipe-auto-switch{width:100%;margin-bottom:5px;padding:7px}
+.recipe-confirm{width:100%;padding:12px 5px;margin:8px 0;background:#287b65;border:1px solid #80e7ba;color:white;font-weight:bold;border-radius:8px}
+.recipe-confirm:disabled{background:#2a4853;border-color:#536875;color:#9cb1bc;cursor:default}
+.recipe-preview-note{font-size:11px;color:#b6d9d8;text-align:center;margin:5px 0}
+.combat-slot{isolation:isolate}
+.combat-reload-ring{position:absolute;inset:8px;z-index:0;pointer-events:none;border-radius:50%;background:conic-gradient(from 0deg,rgba(118,223,229,.35) var(--load),rgba(104,163,189,.07) var(--load));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));transition:background 90ms linear}
+.combat-slot.dead .combat-reload-ring{opacity:0}
+.combat-slot > strong,.combat-slot > small,.combat-slot > .combat-unit-health{position:relative;z-index:1}
+@media(max-width:800px) and (orientation:landscape){.recipe-card-grid{gap:5px;max-height:50dvh}.recipe-card-choice{padding:3px 2px}.recipe-card-choice .fcg-card{width:min(100%,70px)}.recipe-card-choice small{font-size:9px}.recipe-confirm{padding:8px 4px}}
+@media(max-width:550px){.recipe-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
