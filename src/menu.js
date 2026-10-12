@@ -1,6 +1,6 @@
 // Frontend-only main menu. No simulated permanent rewards, accounts or matchmaking.
 const ITEMS={
- battle:{name:'戦う',icon:'⚔',subtitle:'BATTLE OPERATIONS',entries:[['cpu','CPU対戦','現在の試作対戦を起動します'],['friendMatch','フレンド対戦','オンライン対応後に公開'],['rules','ルール','基本的な対戦ルールを確認']]},
+ battle:{name:'戦う',icon:'⚔',subtitle:'BATTLE OPERATIONS',entries:[['cpu','CPU対戦','現在の試作対戦を起動します'],['friendMatch','フレンド対戦（通信テスト）','Colyseus接続テスト画面でルーム参加を試します'],['rules','ルール','基本的な対戦ルールを確認']]},
  factory:{name:'恒常工場',icon:'▦',subtitle:'PERMANENT FACTORY',entries:[['permanent','恒常工場を管理','開発予定'],['scrap','廃品再利用','開発予定'],['cosmetics','コスメ製造','開発予定']]},
  customize:{name:'カスタマイズ',icon:'✦',subtitle:'CUSTOMIZATION',entries:[['cardskin','カードスキン','開発予定'],['facilityskin','施設スキン','開発予定'],['profile','プロフィール','開発予定']]},
  missions:{name:'ミッション',icon:'▤',subtitle:'MISSIONS',entries:[['daily','デイリー','開発予定'],['weekly','ウィークリー','開発予定'],['achieve','実績','開発予定']]}
@@ -42,6 +42,7 @@ export function mountMainMenu({openBattle,openFactory}){
   if(!sub){detail.append(mk('span','menu-detail-kicker','SELECT AN OPTION'),mk('h2','','項目を選択'),mk('p','','左のボタンから項目を選んでください。'));return}
   const chosen=info.entries.find(e=>e[0]===sub);detail.append(mk('span','menu-detail-kicker','SELECTED OPERATION'),mk('h2','',chosen[1]),mk('p','',chosen[2]));
   if(section==='battle'&&sub==='cpu'){detail.append(mk('p','menu-detail-notice','現在の試作対戦を起動します。準備時間は120秒です。'));detail.append(btn('試作対戦を始める  →','menu-primary',()=>{close();openBattle?.()}))}
+  else if(section==='battle'&&sub==='friendMatch'){detail.append(mk('p','menu-detail-notice','v3.2は通信・ルーム参加・命令のテスト画面です。従来の工場・戦闘UIとの接続は次段階です。'));detail.append(btn('通信テスト画面を開く  →','menu-primary',()=>{window.location.href='./online-test.html'}))}
   else if(section==='battle'&&sub==='rules'){const list=mk('div','menu-rules');list.innerHTML='<p>工場で素材からカードを製造し、中央の出荷区画を通して手札へ届けます。</p><p>戦場は前衛・後衛の各5列。敵本体HPを0にすると勝利です。</p><p>開戦前には120秒間の準備時間があります。</p>';detail.append(list)}
   else detail.append(mk('span','menu-coming','COMING LATER · 今後実装予定'));
  }

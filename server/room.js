@@ -1,0 +1,36 @@
+import {Room} from 'colyseus';
+import {createSession} from './session-core.js';
+import {readFileSync} from 'node:fs';
+const unitStats=JSON.parse(readFileSync(new URL('../data/unit-stats.json',import.meta.url),'utf8'));
+const LOOP_SECONDS=0.05;
+/** No state sent through Colyseus Schema: per-team views are sent as private messages. */
+export class FactoryDuelRoom extends Room {
+ onCreate(options){
+  this.maxClients=2;
+  this.autoDispose=true;
+  this.session=createSession({stats:unitStats});
+  this.onMessage('request_view',(client)=>{try{client.send('view',this.session.view(client.sessionId))}catch(e){}});
+  this.onMessage('command',(client,data)=>{
+   let result;
+   try{result=this.session.command(client.sessionId,data)}catch(e){result={ok:false,error:'命令処理に失敗しました'}}
+   client.send('command_result',{requestId:typeof data?.requestId==='string'?data.requestId.slice(0,64):null,...result});
+   if(result.ok)this.broadcastViews();
+  });
+  this.setSimulationInterval(()=>{
+   try{
+    const before=this.session.revision;
+    this.session.advance(LOOP_SECONDS);
+    this.session.advance(LOOP_SECONDS);
+    if(this.session.revision!==before)this.broadcastViews();
+   }catch(e){console.error('Duel simulation error',e);this.broadcast('server_error',{message:'試合の進行でエラーが発生しました'});this.broadcast('server_error',{message:'試合を停止しました'});}
+  },100);
+  // Advance twice per interval to keep 50ms simulation ticks but limit network rate.
+ }
+ onJoin(client){
+  const team=this.session.attach(client.sessionId);
+  client.send('assigned',{team,roomId:this.roomId});
+  this.broadcastViews();
+ }
+ onLeave(client){this.session.detach(client.sessionId);this.broadcastViews()}
+ broadcastViews(){for(const c of this.clients){try{c.send('view',this.session.view(c.sessionId))}catch(e){/* left client */}}}
+}

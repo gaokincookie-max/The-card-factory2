@@ -1,11 +1,17 @@
 {
   "name": "factory-card-game",
-  "version": "2.8.0",
+  "version": "3.2.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node tests/foundation.test.mjs && node tests/commands.test.mjs && node tests/battle-boundary.test.mjs && node test_v17_audit.mjs && node test_v16.mjs && node test_battle.mjs && node test_v15.mjs && node tests/separation.test.mjs && node tests/factory-economy.test.mjs && node tests/unit-balance-parity.test.mjs && node tests/factory-modules.test.mjs",
+    "test": "node tests/foundation.test.mjs && node tests/commands.test.mjs && node tests/battle-boundary.test.mjs && node test_v17_audit.mjs && node test_v16.mjs && node test_battle.mjs && node test_v15.mjs && node tests/separation.test.mjs && node tests/factory-economy.test.mjs && node tests/unit-balance-parity.test.mjs && node tests/factory-modules.test.mjs && node tests/duel-match.test.mjs && node tests/online-session.test.mjs",
     "bench": "node tests/performance-benchmark.mjs",
-    "check": "node --check src/engine.js && node --check src/factory-simulation.js && node --check src/battle.js && node --check src/commands.js && node --check src/app.js && node --check src/random.js && node --check src/match-state.js && node --check src/match-runner.js && node --check src/battle-ui.js && node --check src/balance-config.js && node --check src/factory-economy-config.js"
+    "check": "node --check src/engine.js && node --check src/factory-simulation.js && node --check src/battle.js && node --check src/commands.js && node --check src/app.js && node --check src/random.js && node --check src/match-state.js && node --check src/match-runner.js && node --check src/battle-ui.js && node --check src/balance-config.js && node --check src/factory-economy-config.js && node --check src/duel-match.js && node --check server/session-core.js && node --check server/room.js && node --check server/index.js",
+    "server": "node server/index.js",
+    "test:online": "node tests/online-session.test.mjs"
+  },
+  "dependencies": {
+    "colyseus": "^0.16.0",
+    "@colyseus/ws-transport": "^0.16.0"
   }
 }

@@ -54,3 +54,16 @@
 - 独立モジュールの回帰テストと再実行可能なベンチマークを追加。
 - 工場計算の測定値はv2.7からほぼ変わらず（改善未確認）。
 - ブラウザ自動操作テストは完了できず。残課題は `PHASE7_NOTES.md`。
+
+## v3.1 — 2人対戦のヘッドレス共通土台
+- 両チームの工場を独立させ、戦場を共有する `src/duel-match.js` を新設。
+- 二人対戦ではCPUの周期自動出撃を停止。ユニット配置、補助カード、施設命令を陣営別に処理。
+- 敵の工場・手札を含まないプレイヤー別表示データ、Snapshot保存・復元を追加。
+- `tests/duel-match.test.mjs` 追加、既存テストを維持。
+- 詳細は `PHASE8_DUEL_FOUNDATION.md`。Colyseus通信・2ブラウザUIは次段階。
+
+## v3.2 - Colyseus communication foundation
+- Colyseus room server and private per-player state updates.
+- Dedicated browser room creation/join and building-command smoke test page.
+- Session lifecycle and authority tests; original game modes preserved.
+- Real WebSocket end-to-end verification deferred until dependency installation.
