@@ -209,3 +209,5 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
  .combat-cast-zone{min-height:7px!important;height:7px;margin:1px 0}
  .combat-footer{margin-top:2px;padding-top:2px}
 }
+
+.online-connect-overlay:not([hidden]){position:fixed;inset:0;background:#07131bdb;z-index:99999;display:grid;place-items:center;padding:14px}.online-connect-dialog{background:#193442;border:1px solid #5796a8;color:#f1f9fc;border-radius:16px;padding:22px;width:min(590px,96vw);max-height:90vh;overflow:auto;box-shadow:0 20px 60px #0007}.online-connect-dialog label{display:block;margin:12px 0}.online-connect-dialog input{display:block;width:100%;box-sizing:border-box;padding:10px;margin-top:5px;background:#244758;color:white;border:1px solid #6090a2;border-radius:7px}.online-connect-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.online-connect-actions button{flex:1 1 115px;padding:10px}.online-connect-dialog p{line-height:1.5}

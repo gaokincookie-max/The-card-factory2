@@ -67,3 +67,9 @@
 - Dedicated browser room creation/join and building-command smoke test page.
 - Session lifecycle and authority tests; original game modes preserved.
 - Real WebSocket end-to-end verification deferred until dependency installation.
+
+## v3.3 共通UIオンライン接続（工場編・未完成）
+- メインメニューから同一工場画面にオンライン接続を追加。
+- ローカルとオンラインで工場UIを複製せず、コマンド送信先を切替。
+- サーバーのプレイヤー別状態を工場盤へ反映。クライアント側の進行停止。
+- 戦闘操作は未対応としてブロック。
