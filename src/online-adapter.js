@@ -6,7 +6,7 @@ export function createOnlineAdapter({state,battle,onView,onStatus}) {
  document.body.append(el);
  const $=id=>el.querySelector('#'+id),status=msg=>{$('onlineStatus').textContent=msg;onStatus?.(msg)};
  $('onlineEndpoint').value=localStorage.getItem('fcgServerUrl')||$('onlineEndpoint').value;
- const url=()=>{const s=$('onlineEndpoint').value.trim().replace(/\/$/,'');if(!/^wss?:\/\//.test(s))throw Error('サーバーURLは ws:// または wss:// で入力してください');return s};
+ const url=()=>{const s=$('onlineEndpoint').value.trim().replace(/\/$/,'');if(!/^wss?:\/\//.test(s))throw Error('サーバーURLは ws:// または wss:// で入力してください');if(location.protocol==='https:'&&s.startsWith('ws://'))throw Error('HTTPSページから ws:// には接続できません。公開サーバーの wss:// URLを指定するか、ローカルで http://localhost:8000/ を開いてください');if(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1'&&/^wss?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(s))throw Error('localhostは操作中の端末自身を指します。別の端末から接続するには公開サーバーURLが必要です');return s};
  async function connect(create){
   if(room){status('すでにルームへ接続中です');return}
   $('onlineCreate').disabled=$('onlineJoin').disabled=true;
@@ -34,7 +34,7 @@ export function createOnlineAdapter({state,battle,onView,onStatus}) {
    joined.onLeave(()=>{if(room===joined){room=null;connected=false;status('ルームから切断されました。続ける場合はメニューから入り直してください')}});
    joined.send('request_view');status('接続しました。試合の状態を取得しています');
    el.hidden=true;
-  }catch(err){status('接続失敗: '+(err?.message||String(err)))}
+  }catch(err){const raw=err?.message||String(err);status('接続失敗: '+(raw==='[object XMLHttpRequestProgressEvent]'?'サーバーへ到達できませんでした。サーバーURLと起動状態、HTTPS/WSSの設定を確認してください':raw))}
   finally{$('onlineCreate').disabled=$('onlineJoin').disabled=false}
  }
  $('onlineCreate').onclick=()=>connect(true);$('onlineJoin').onclick=()=>connect(false);
