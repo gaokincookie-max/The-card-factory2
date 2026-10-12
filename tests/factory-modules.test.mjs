@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {initialState,place,step,encodeItem} from '../src/engine.js';
+import {runBuildings,routeBelts} from '../src/factory-simulation.js';
+import {FACTORY_ECONOMY} from '../src/factory-economy-config.js';
+assert.equal(typeof runBuildings,'function');
+assert.equal(typeof routeBelts,'function');
+const s=initialState();s.money=9999;
+assert.equal(place(s,'smelter',8,5),null);
+const sm=s.buildings[0];sm.inventory['鉄鉱石']=2;
+sm.mode='manual';
+const recipe=(await import('../src/engine.js')).recipes.smelter.find(r=>Object.keys(r.input).includes('鉄鉱石'));
+assert.ok(recipe,'Smelter iron recipe exists');sm.recipe=recipe.id;
+for(let i=0;i<1000;i++)step(s,.05);
+assert.ok(s.tick>0);
+assert.ok(sm.progress>=0);
+assert.equal(typeof FACTORY_ECONOMY.progressUnitsPerSecond,'number');
+console.log('PASS factory-simulation module boundary and smelter integration');

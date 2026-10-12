@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createBattle,deploy,advanceBattle,activateSupportFromHand} from '../src/battle.js';
+import {SUPPORT_BALANCE,UNIT_BALANCE} from '../src/balance-config.js';
+const logic=readFileSync(new URL('../src/battle.js',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../src/battle-ui.js',import.meta.url),'utf8');
+assert(!logic.includes('document.querySelector'), 'simulation must not use DOM');
+assert(!logic.includes('element.innerHTML'), 'simulation must not render HTML');
+assert(ui.includes('export function mountBattle'), 'battle UI must be in separate module');
+assert.equal(SUPPORT_BALANCE.artilleryDamage,60);
+assert.equal(SUPPORT_BALANCE.empSeconds,4);
+assert.equal(UNIT_BALANCE.medicHeal,12);
+const factory={hand:Array(8).fill(null),money:0,tick:0};
+const battle=createBattle(factory);
+factory.hand[0]={name:'資材調達',mods:[]};
+assert.equal(activateSupportFromHand(battle,0).ok,true);
+assert.equal(factory.money,25);assert.equal(factory.hand[0],null);
+console.log('phase4 separation/balance tests passed');

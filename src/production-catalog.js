@@ -1,0 +1,4 @@
+// Intermediate product recipes. Card factory recipes are defined in card-recipes.js.
+import {cardRecipes} from "./card-recipes.js";
+export const baseRecipes={smelter:[{id:'iron_bar',name:'鉄材',input:{'鉄鉱石':1},seconds:3},{id:'armor',name:'装甲板',input:{'鉄鉱石':1},seconds:4},{id:'wire',name:'銅線',input:{'銅鉱石':1},seconds:3},{id:'electronics',name:'電子部品',input:{'銅鉱石':1},seconds:4},{id:'fuel',name:'燃料',input:{'原油':1},seconds:3},{id:'resin',name:'樹脂',input:{'原油':1},seconds:4},{id:'gunpowder',name:'火薬',input:{'化学資源':1},seconds:3},{id:'medicine',name:'薬剤',input:{'化学資源':1},seconds:4}],assembler:[{id:'precision',name:'精密機械',input:{'鉄材':1,'銅線':1},seconds:6},{id:'reinforced',name:'強化装甲',input:{'装甲板':1,'樹脂':1},seconds:6},{id:'controller',name:'制御装置',input:{'電子部品':1,'樹脂':1},seconds:6},{id:'ammo',name:'高性能弾薬',input:{'鉄材':1,'火薬':1},seconds:6},{id:'propulsion',name:'推進装置',input:{'鉄材':1,'燃料':1},seconds:6}]};
+export const recipes={...baseRecipes,...cardRecipes};
