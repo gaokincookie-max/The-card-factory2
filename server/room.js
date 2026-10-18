@@ -3,6 +3,7 @@ import {createSession} from './session-core.js';
 import {readFileSync} from 'node:fs';
 const unitStats=JSON.parse(readFileSync(new URL('../data/unit-stats.json',import.meta.url),'utf8'));
 const LOOP_SECONDS=0.05;
+const RECONNECT_SECONDS=90;
 /** No state sent through Colyseus Schema: per-team views are sent as private messages. */
 export class FactoryDuelRoom extends Room {
  onCreate(options){
@@ -31,6 +32,22 @@ export class FactoryDuelRoom extends Room {
   client.send('assigned',{team,roomId:this.roomId});
   this.broadcastViews();
  }
- onLeave(client){this.session.detach(client.sessionId);this.broadcastViews()}
+ async onLeave(client,consented){
+  if(!consented && this.session.suspend(client.sessionId)){
+   this.broadcastViews();
+   try{
+    const restored=await this.allowReconnection(client,RECONNECT_SECONDS);
+    this.session.resume(restored.sessionId);
+    restored.send('assigned',{team:this.session.view(restored.sessionId).team,roomId:this.roomId,reconnected:true});
+    this.broadcastViews();
+    return;
+   }catch(error){
+    // Timeout ends this match; do not let a new user take over the disconnected seat.
+    this.session.expire(client.sessionId);this.broadcastViews();return;
+   }
+  }
+  this.session.detach(client.sessionId);
+  this.broadcastViews();
+ }
  broadcastViews(){for(const c of this.clients){try{c.send('view',this.session.view(c.sessionId))}catch(e){/* left client */}}}
 }

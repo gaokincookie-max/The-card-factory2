@@ -5,7 +5,7 @@ let room=null,client=null,team=null;
 const log=(msg)=>{$('log').textContent=`${new Date().toLocaleTimeString()} ${msg}\n`+$('log').textContent.slice(0,5000)};
 function status(msg){$('status').textContent=msg;log(msg)}
 const serverInput=$('serverUrl');
-serverInput.value=localStorage.getItem('fcgServerUrl')||serverInput.value;
+serverInput.value=localStorage.getItem('fcgServerUrl')||(location.protocol==='https:'?'wss://YOUR-SERVICE.onrender.com':serverInput.value);
 async function connect(kind){
  if(room){status('すでに接続しています。先に退出してください。');return}
  const url=serverInput.value.trim().replace(/\/$/,'');

@@ -1,3 +1,8 @@
+## v3.5 — Online facility detail refresh
+- Live facility progress/material readings bound to newest online snapshot via stable facility ID.
+- Recipe confirmation reflects server-committed result without recreating panel on every tick.
+- Inventory / warehouse detail refreshes after relevant server changes.
+
 ## v3.0
 - 全画面階層式のメインメニューへ変更。
 - ホームでカテゴリ詳細を非表示、選択後にカテゴリ全画面表示、左上で戻る。
@@ -73,3 +78,6 @@
 - ローカルとオンラインで工場UIを複製せず、コマンド送信先を切替。
 - サーバーのプレイヤー別状態を工場盤へ反映。クライアント側の進行停止。
 - 戦闘操作は未対応としてブロック。
+
+## v3.6
+- オンライン補助カードの対象選択事前判定を共通戦闘UIに接続。実行確定はサーバーのみ。再配置の2段階選択に対応。
