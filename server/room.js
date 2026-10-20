@@ -14,6 +14,7 @@ export class FactoryDuelRoom extends Room {
   this.autoDispose=true;
   this.session=createSession({stats:unitStats});
   this.onMessage('ready',(client,message)=>{const result=this.session.setReady(client.sessionId,message?.ready===true);client.send('ready_result',result);this.broadcastViews()});
+  this.onMessage('return_to_lobby',(client)=>{client.send('return_result',this.session.returnToLobby(client.sessionId));this.broadcastViews()});
   this.onMessage('request_view',(client)=>{try{client.send('view',this.session.view(client.sessionId))}catch(e){}});
   this.onMessage('command',(client,data)=>{
    let result;

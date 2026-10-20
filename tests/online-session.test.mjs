@@ -16,6 +16,6 @@ assert.equal(s.view('alice').factory.buildings.length,1);
 assert.equal(JSON.stringify(s.view('alice')).includes('factories'),false);
 assert.equal(s.command('not-connected',{type:'BUILD_FACILITY',payload:{kind:'smelter',x:8,y:8}}).ok,false);
 let clock=s.duel.battle.time;s.advance(0.1);assert.ok(s.duel.battle.time>clock);
-s.detach('bob');assert.equal(s.phase,'waiting');clock=s.duel.battle.time;s.advance(0.1);assert.equal(s.duel.battle.time,clock);
+s.detach('bob');assert.equal(s.phase,'finished');assert.equal(s.view('alice').result.winner,0);clock=s.duel.battle.time;s.advance(0.1);assert.equal(s.duel.battle.time,clock);
 assert.equal(s.command('alice',{type:'BUILD_FACILITY',payload:{kind:'smelter',x:8,y:8}}).ok,false);
 console.log('PASS online session join, isolation, authority, paused disconnect');

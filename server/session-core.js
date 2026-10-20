@@ -3,11 +3,11 @@ import {createDuel,advanceDuel,applyDuelCommand,getDuelView} from '../src/duel-m
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export function makeRoomCode(random=Math.random){let code='';for(let i=0;i<6;i++)code+=CODE_ALPHABET[Math.floor(random()*CODE_ALPHABET.length)];return code;}
 export function createSession(options={}){
- const duel=createDuel(options);
+ let duel=createDuel(options);
  const clients=new Map();
  const suspended=new Set();
  const ready=new Set();
- let phase='waiting';let revision=0;let countdown=0;let hasStarted=false;
+ let phase='waiting';let revision=0;let countdown=0;let hasStarted=false;let result=null;const returned=new Set();
  const connected=()=>clients.size-suspended.size;
  const attach=(id)=>{
   if(clients.has(id))throw Error('Already joined');
@@ -20,8 +20,19 @@ export function createSession(options={}){
  };
  const suspend=(id)=>{if(!clients.has(id)||suspended.has(id))return false;suspended.add(id);if(phase!=='finished')phase='waiting';revision++;return true};
  const resume=(id)=>{if(!clients.has(id))return false;suspended.delete(id);if(phase!=='finished'&&clients.size===2&&suspended.size===0)phase=ready.size===2?(hasStarted?'playing':'starting'):'lobby';revision++;return true};
- const expire=(id)=>{if(!clients.has(id))return false;clients.delete(id);suspended.delete(id);ready.delete(id);phase='finished';revision++;return true};
- const detach=(id)=>{if(!clients.has(id))return;clients.delete(id);suspended.delete(id);ready.delete(id);if(phase!=='finished')phase='waiting';revision++};
+ const finish=(winner,reason)=>{if(result)return;result={winner,reason,time:duel.battle.time,health:[...duel.battle.health]};phase='finished';revision++;};
+ const expire=(id)=>{if(!clients.has(id))return false;const loser=clients.get(id);if(hasStarted&&!result)finish(1-loser,'disconnect');clients.delete(id);suspended.delete(id);ready.delete(id);returned.delete(id);if(!hasStarted&&!result)phase='finished';revision++;return true};
+ const detach=(id)=>{if(!clients.has(id))return;const loser=clients.get(id);if(hasStarted&&!result)finish(1-loser,'leave');clients.delete(id);suspended.delete(id);ready.delete(id);returned.delete(id);if(!hasStarted&&!result)phase='waiting';revision++};
+ const returnToLobby=(id)=>{
+  if(!clients.has(id))return {ok:false,error:'ルームに参加していません'};
+  if(phase==='lobby')return {ok:true};
+  if(phase!=='finished')return {ok:false,error:'試合が終了していません'};
+  returned.add(id);revision++;
+  if(returned.size===clients.size&&suspended.size===0&&clients.size>0){
+   duel=createDuel(options);ready.clear();returned.clear();result=null;hasStarted=false;countdown=0;phase=clients.size===2?'lobby':'waiting';revision++;
+  }
+  return {ok:true};
+ };
  const setReady=(id,value)=>{
   if(!clients.has(id)||suspended.has(id)||!['waiting','lobby'].includes(phase))return {ok:false,error:'この状態では準備を変更できません'};
   if(value===true)ready.add(id);else ready.delete(id);
@@ -41,12 +52,12 @@ export function createSession(options={}){
   if(phase==='starting'){countdown=Math.max(0,countdown-dt);if(countdown<0.000001){countdown=0;phase='playing';hasStarted=true;revision++;}return;}
   if(phase!=='playing')return;
   advanceDuel(duel,dt);revision++;
-  if(duel.battle.victor)phase='finished';
+  if(duel.battle.victor){const victor=duel.battle.victor;finish(victor==='draw'?null:victor==='team0'?0:1,victor==='draw'?'draw':'headquarters');}
  };
  const view=(id)=>{
   const team=clients.get(id);
   if(team===undefined)throw Error('Not joined');
-  return {...getDuelView(duel,team),phase,players:connected(),startCountdown:countdown,reservedPlayers:clients.size,readyTeams:[...ready].map(x=>clients.get(x)),reconnectSeconds:90,revision};
+  return {...getDuelView(duel,team),phase,players:connected(),startCountdown:countdown,reservedPlayers:clients.size,readyTeams:[...ready].map(x=>clients.get(x)),reconnectSeconds:90,result,returnedTeams:[...returned].map(x=>clients.get(x)),revision};
  };
- return {duel,attach,suspend,resume,expire,detach,setReady,command,advance,view,get phase(){return phase},get count(){return clients.size},get revision(){return revision}};
+ return {get duel(){return duel},attach,suspend,resume,expire,detach,returnToLobby,setReady,command,advance,view,get phase(){return phase},get count(){return clients.size},get revision(){return revision}};
 }

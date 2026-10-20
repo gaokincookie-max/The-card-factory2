@@ -1,3 +1,4 @@
+import {installMobileBoardControls} from './mobile-board-controls.js';
 import {mountMainMenu} from './menu.js';
 import {createOnlineAdapter} from './online-adapter.js';
 import {executeCommand} from './commands.js';
@@ -22,6 +23,7 @@ function placement(){return; /* inline floating placement toolbar */ const el=do
 ${pending?`仮配置：(${pending.x}, ${pending.y})`:'配置先のマスをクリックしてください'}
 ※建設確定後も同じ施設を配置できます。`;}
 const cells=[];for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const b=document.createElement('button');b.className='cell';b.type='button';b.title=`${x},${y}`;b.addEventListener('click',()=>click(x,y));b.addEventListener('pointerenter',()=>{if(tool==='belt'&&beltStart){beltHover={x,y};draw()}});b.addEventListener('pointerup',()=>{});board.append(b);cells.push(b)}
+installMobileBoardControls({viewport:document.querySelector('.board-scroll'),board});
 let lastBeltTap={key:'',time:0};board.addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c||tool!=='inspect')return;const i=cells.indexOf(c),x=i%SIZE,y=Math.floor(i/SIZE),key=x+','+y,now=Date.now();if(beltAt(state,x,y)&&lastBeltTap.key===key&&now-lastBeltTap.time<330){const err=commandError('REMOVE_AT',{x,y});showFloating(null);selected=null;draw();note(err||'ベルトを撤去しました')}lastBeltTap={key,time:now};});
 function note(s){if(hint)hint.textContent=s;if(log)log.textContent=`${s}\n${log.textContent}`.slice(0,600)}
 const overlay=document.querySelector('#uiOverlay'),modal=document.querySelector('#modalPanel'),floatBar=document.querySelector('#floatingActions');

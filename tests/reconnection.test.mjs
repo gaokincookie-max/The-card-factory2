@@ -21,7 +21,7 @@ assert.equal(s.resume('b'),true);
 assert.equal(s.phase,'playing');assert.equal(s.view('b').team,1);
 assert.equal(s.view('b').factory.buildings.length,initial+1);
 s.advance(.1);assert.ok(s.duel.battle.time>before);
-s.detach('b');assert.equal(s.phase,'waiting');
+s.detach('b');assert.equal(s.phase,'finished');assert.equal(s.view('a').result.winner,0);
 assert.equal(s.resume('b'),false);
 const timeout=createSession();timeout.attach('p1');timeout.attach('p2');timeout.suspend('p2');assert.equal(timeout.expire('p2'),true);assert.equal(timeout.phase,'finished');assert.throws(()=>timeout.attach('p3'));
 console.log('PASS reconnect suspend, reserved seat, state, authority, resumed clock');

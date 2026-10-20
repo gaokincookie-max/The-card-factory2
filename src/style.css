@@ -240,3 +240,47 @@ body{padding-bottom:135px}.workarea{display:block;width:100%;max-width:none;padd
  .build-dock{padding:3px}.dock-upper{gap:3px}.build-card{padding:3px;min-width:104px}.build-card .symbol{height:20px;width:20px}
  .board-scroll{height:calc(100dvh - 125px)!important;min-height:115px}.ui-modal{padding:6px}.modal-heading{margin-bottom:3px}
 }
+
+/* v4.0: full-screen lobby/result, no access to the game beneath until match starts */
+.online-connect-overlay:not([hidden]){position:fixed;inset:0;z-index:99999;display:flex;justify-content:center;align-items:center;padding:0;background:#07131b!important}
+.online-connect-dialog{width:100vw!important;height:100dvh!important;max-height:none!important;max-width:none!important;border:0!important;border-radius:0!important;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:clamp(12px,3vh,25px) clamp(16px,5vw,80px)!important}
+.online-connect-dialog #onlineEntry,.online-connect-dialog #onlineLobby,.online-connect-dialog #onlineStarting,.online-connect-dialog #onlineResult{width:min(940px,100%);margin:0 auto}
+.online-lobby-header{width:min(940px,100%);margin:0 auto}.online-result{text-align:center}.online-result>strong{display:block;font-size:clamp(38px,8vw,95px);color:#e3c789;letter-spacing:.07em}.online-result>strong[data-outcome=lose]{color:#d98389}.online-result>strong[data-outcome=draw]{color:#a6bdcc}.online-result button{font-size:clamp(15px,2.1vw,22px);padding:12px 25px;background:#286876;color:white;border-radius:10px}
+
+/* v4.1: landscape touch UI; desktop layout and gameplay logic stay shared. */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:700px) {
+  html,body {overscroll-behavior:none}
+  body {padding-bottom:48px!important}
+  .topbar {position:relative;z-index:20;min-height:34px!important;max-height:44px;padding:2px 7px!important}
+  .status-row {height:20px;padding:0 6px;font-size:9px;gap:10px}
+  .board-head {min-height:20px;padding:2px 7px!important}
+  .board-head h1 {font-size:10px!important}
+  .board-foot {padding:2px 5px;min-height:16px}
+  .board-foot .legend {display:none}
+  .board-scroll {height:calc(100dvh - 122px)!important;min-height:90px!important;overflow:auto;touch-action:none;overscroll-behavior:contain;padding:5px!important}
+  #board {transform-origin:top left}
+  .build-dock {padding:2px 5px 3px!important}
+  .dock-upper {gap:3px!important;min-height:25px;flex-wrap:nowrap!important}
+  .dock-upper strong {display:none}
+  .dock-upper .tabs {order:0!important;width:auto!important;overflow-x:auto}
+  .dock-upper button,.dock-belt,.tab {padding:3px 6px!important;font-size:10px!important;min-height:25px}
+  .building-cards {gap:4px!important;padding-top:3px!important}
+  .build-card {min-width:92px!important;padding:3px 5px!important;gap:4px!important}
+  .build-card .symbol {width:21px!important;height:21px!important;font-size:13px!important}
+  .build-card .name {font-size:10px!important}.build-card small {font-size:8px!important;margin-top:1px!important}
+  .floating-actions {padding:3px;gap:4px}
+  .float-button {min-width:34px;min-height:32px;font-size:18px;padding:2px}
+  .ui-overlay {padding:3px!important}
+  .ui-modal {width:min(97vw,1100px)!important;max-height:97dvh!important;padding:5px 8px!important;overflow:hidden;display:flex;flex-direction:column}
+  .modal-heading {flex:none;padding-bottom:3px!important;margin-bottom:4px!important}
+  .modal-heading h2 {font-size:13px!important}
+  .modal-heading button {font-size:18px!important;padding:2px 8px!important}
+  .facility-layout {min-height:0;flex:1;overflow:hidden;gap:6px!important}
+  .facility-left,.facility-right {min-height:0;padding:5px!important;overflow:auto}
+  .facility-content {max-height:none!important;min-height:0;overflow-y:auto}
+  .facility-tabs {margin-bottom:4px!important}
+  .facility-tabs button,.recipe-confirm {padding:4px!important;font-size:10px!important}
+  .recipe-card-grid {gap:4px!important}
+  .online-connect-dialog {padding:8px 14px!important}
+  #onlineReady {padding:7px!important}
+}
