@@ -4,6 +4,7 @@ const s=createSession();
 assert.equal(s.attach('a'),0);
 assert.equal(s.attach('b'),1);
 const initial=s.view('b').factory.buildings.length;
+assert.equal(s.phase,'lobby');s.setReady('a',true);s.setReady('b',true);assert.equal(s.phase,'starting');s.advance(2.5);assert.equal(s.phase,'playing');
 assert.equal(s.command('b',{type:'BUILD_FACILITY',payload:{kind:'smelter',x:8,y:8}}).ok,true);
 assert.equal(s.view('b').factory.buildings.length,initial+1);
 const before=s.duel.battle.time;

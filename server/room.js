@@ -1,4 +1,5 @@
 import {Room} from 'colyseus';
+import {randomInt} from 'node:crypto';
 import {createSession} from './session-core.js';
 import {readFileSync} from 'node:fs';
 const unitStats=JSON.parse(readFileSync(new URL('../data/unit-stats.json',import.meta.url),'utf8'));
@@ -7,9 +8,12 @@ const RECONNECT_SECONDS=90;
 /** No state sent through Colyseus Schema: per-team views are sent as private messages. */
 export class FactoryDuelRoom extends Room {
  onCreate(options){
+  // Short room codes; Colyseus uses this identifier for joinById.
+  this.roomId=String(randomInt(10000000,100000000));
   this.maxClients=2;
   this.autoDispose=true;
   this.session=createSession({stats:unitStats});
+  this.onMessage('ready',(client,message)=>{const result=this.session.setReady(client.sessionId,message?.ready===true);client.send('ready_result',result);this.broadcastViews()});
   this.onMessage('request_view',(client)=>{try{client.send('view',this.session.view(client.sessionId))}catch(e){}});
   this.onMessage('command',(client,data)=>{
    let result;
