@@ -15,7 +15,7 @@ export function mountMainMenu({openBattle,openFactory,openOnline}){
  const header=mk('header','menu-header');header.innerHTML='<div class="menu-logo"><span class="menu-logo-symbol">▥</span><div><strong>FACTORY <em>CARD GAME</em></strong><small>INDUSTRIAL COMMAND</small></div></div><div class="menu-header-right"><span class="menu-dev-label">DEVELOPMENT BUILD</span><button type="button" id="menuSettings" class="menu-icon-btn" aria-label="設定">⚙</button></div>';
  const body=mk('main','menu-main menu-main-v3');const nav=mk('nav','menu-nav');const panel=mk('section','menu-center');const right=mk('aside','menu-right');body.append(nav,panel,right);surface.append(header,body);
  const footer=mk('footer','menu-footer','EARLY ACCESS PROTOTYPE   •   PC / MOBILE LANDSCAPE');surface.append(footer);
- function close(){root.hidden=true;window.__fcgMenuOpen=false;openFactory?.()}
+ function close(restoreFactory=true){root.hidden=true;window.__fcgMenuOpen=false;if(restoreFactory)openFactory?.()}
  function open(){section=null;sub=null;settings=false;friend=false;root.hidden=false;window.__fcgMenuOpen=true;render()}
  function home(){section=null;sub=null;settings=false;render()}
  function choose(k){settings=false;section=k;sub=null;render()}
@@ -42,7 +42,7 @@ export function mountMainMenu({openBattle,openFactory,openOnline}){
   if(!sub){detail.append(mk('span','menu-detail-kicker','SELECT AN OPTION'),mk('h2','','項目を選択'),mk('p','','左のボタンから項目を選んでください。'));return}
   const chosen=info.entries.find(e=>e[0]===sub);detail.append(mk('span','menu-detail-kicker','SELECTED OPERATION'),mk('h2','',chosen[1]),mk('p','',chosen[2]));
   if(section==='battle'&&sub==='cpu'){detail.append(mk('p','menu-detail-notice','現在の試作対戦を起動します。準備時間は120秒です。'));detail.append(btn('試作対戦を始める  →','menu-primary',()=>{close();openBattle?.()}))}
-  else if(section==='battle'&&sub==='friendMatch'){detail.append(mk('p','menu-detail-notice','数字8桁のルーム番号で友達と参加し、双方が準備OKすると試合が始まります。'));detail.append(btn('オンラインに接続  →','menu-primary',()=>{close();openOnline?.()}))}
+  else if(section==='battle'&&sub==='friendMatch'){detail.append(mk('p','menu-detail-notice','数字8桁のルーム番号で友達と参加し、双方が準備OKすると試合が始まります。'));detail.append(btn('オンラインに接続  →','menu-primary',()=>{close(false);openOnline?.()}))}
   else if(section==='battle'&&sub==='rules'){const list=mk('div','menu-rules');list.innerHTML='<p>工場で素材からカードを製造し、中央の出荷区画を通して手札へ届けます。</p><p>戦場は前衛・後衛の各5列。敵本体HPを0にすると勝利です。</p><p>開戦前には120秒間の準備時間があります。</p>';detail.append(list)}
   else detail.append(mk('span','menu-coming','COMING LATER · 今後実装予定'));
  }

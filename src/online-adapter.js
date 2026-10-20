@@ -1,7 +1,7 @@
 import {planOnlineSupportTarget} from './online-support-planner.js';
 import {ONLINE_SERVER} from './network-config.js';
 /** Shared presentation, two command transports. The online adapter never advances simulation. */
-export function createOnlineAdapter({state,battle,onView,onStatus}) {
+export function createOnlineAdapter({state,battle,onView,onStatus,onExit}) {
  let room=null, connected=false, team=null, revision=-1, queue=0, manualExit=false, reconnecting=false, sdkCache=null,ownReady=false,started=false,latestPhase='waiting',lastResult=null;
  const TOKEN_KEY='fcgReconnectionV37';
  const remember=(endpoint,joined)=>{if(joined?.reconnectionToken)sessionStorage.setItem(TOKEN_KEY,JSON.stringify({endpoint,token:joined.reconnectionToken,roomId:joined.roomId}))};
@@ -80,7 +80,20 @@ export function createOnlineAdapter({state,battle,onView,onStatus}) {
    const endpoint=url();status('通信プログラムを読み込み中…');
    const sdk=await getSdk();const client=new sdk.Client(endpoint);
    const id=$('onlineRoomId').value.trim();if(!create&&!/^[0-9]{8}$/.test(id))throw Error('ルームIDは8桁の数字で入力してください');
-   const joined=create?await client.create('factory_duel'):await client.joinById(id);
+   // Render Free may take a minute to wake up. Retry only transient network failures.
+   let joined, lastError;
+   for(let attempt=0;attempt<13;attempt++){
+    try{joined=create?await client.create('factory_duel'):await client.joinById(id);break}
+    catch(err){
+     lastError=err;
+     const message=String(err?.message||err);
+     const transient=/XMLHttpRequestProgressEvent|fetch|network|timeout|Failed to|ECONN|503|502|504|unavailable|socket/i.test(message);
+     if(!transient||attempt===12)throw err;
+     status(`サーバー起動・接続待機中…（${attempt+1}/13） 最大約90秒かかる場合があります`);
+     await new Promise(resolve=>setTimeout(resolve,5000));
+    }
+   }
+   if(!joined)throw lastError||new Error('接続できませんでした');
    forget();bindRoom(joined,endpoint);status('接続しました。試合の状態を取得しています');
   }catch(err){const raw=err?.message||String(err);status('接続失敗: '+(raw==='[object XMLHttpRequestProgressEvent]'?'サーバーへ到達できませんでした。サーバーURLと起動状態、HTTPS/WSSの設定を確認してください':raw))}
   finally{$('onlineCreate').disabled=$('onlineJoin').disabled=false}
@@ -101,9 +114,9 @@ export function createOnlineAdapter({state,battle,onView,onStatus}) {
  $('onlineCopy').onclick=async()=>{const id=room?.roomId||'';try{await navigator.clipboard.writeText(id);status('ルーム番号をコピーしました')}catch{status('コピーできませんでした。番号を長押ししてコピーしてください')}};
  $('onlineReady').onclick=()=>{if(room)room.send('ready',{ready:!ownReady})};
  $('onlineReturnLobby').onclick=()=>{if(room)room.send('return_to_lobby')};
- $('onlineClose').onclick=()=>{if(!connected)el.hidden=true;else if(latestPhase==='finished')room.send('return_to_lobby');else if(latestPhase==='playing'||latestPhase==='starting')status('試合中はメニューへ戻れません。');else $('onlineLeave').click()};
+ $('onlineClose').onclick=()=>{if(!connected){el.hidden=true;onExit?.()}else if(latestPhase==='finished')room.send('return_to_lobby');else if(latestPhase==='playing'||latestPhase==='starting')status('試合中はメニューへ戻れません。');else $('onlineLeave').click()};
 
- $('onlineLeave').onclick=async()=>{manualExit=true;const old=room;room=null;connected=false;revision=-1;forget();if(old)try{await old.leave()}catch{}showEntry();status('ルームを退出しました')};
+ $('onlineLeave').onclick=async()=>{manualExit=true;const old=room;room=null;connected=false;revision=-1;forget();if(old)try{await old.leave()}catch{}showEntry();status('ルームを退出しました');el.hidden=true;onExit?.()};
  if(stored()?.token){status('復帰可能なルーム: '+stored().roomId);status('前回のルーム情報があります。「再接続」で復帰を試せます')}
  window.addEventListener('pageshow',()=>{if(!connected&&stored()?.token){status('復帰可能なルーム: '+stored().roomId)}});
  return {get active(){return connected},get team(){return team},show(){el.hidden=false;if(connected){if(latestPhase==='playing'){el.hidden=true;status('対戦進行中・ルーム番号: '+room.roomId)}else if(latestPhase==='finished'){el.hidden=false;if($('onlineLobby').hidden){$('onlineResult').hidden=false}}else showLobby()}else showEntry();if(!connected&&stored()?.token)status('復帰情報があります。90秒以内に「再接続」を押してください')},command(type,payload){

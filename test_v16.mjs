@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {initialState,place,beltLine,step,warehouseStock,encodeItem} from './src/engine.js';
 const s=initialState();
-assert.equal(place(s,'moduleAttack',10,10,0),null);
-assert.equal(place(s,'moduleHP',10,10,0),'施設と重複します');
-assert.equal(beltLine(s,9,10,10,10),null);
-assert.equal(beltLine(s,10,10,12,10),null);
+assert.equal(place(s,'moduleAttack',5,10,0),null);
+assert.equal(place(s,'moduleHP',5,10,0),'施設と重複します');
+assert.equal(beltLine(s,4,10,5,10),null);
+assert.equal(beltLine(s,5,10,7,10),null);
 const b=s.buildings[0];
 b.inventory[encodeItem({name:'歩兵分隊',mods:[]})]=1;
 for(let n=0;n<6;n++)step(s,0.2);

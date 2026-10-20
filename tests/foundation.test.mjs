@@ -18,7 +18,7 @@ assert.throws(()=>advanceMatch(a,0.5));
 assert.throws(()=>importSnapshot({version:3}));
 // warehouse random is reproducible after restoring a snapshot.
 const first=make();const w=first.factory;
-assert.equal(place(w,'warehouseSmall',11,11),null);
+assert.equal(place(w,'warehouseSmall',10,10),null);
 const store=w.buildings[0];store.inventory[encodeItem({name:'鉄鉱石',mods:[]})]=3;
 store.inventory[encodeItem({name:'銅鉱石',mods:[]})]=2;
 const second=importSnapshot(exportSnapshot(first));
