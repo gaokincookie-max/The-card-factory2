@@ -313,3 +313,35 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .online-player-grid .online-player.is-ready span{color:#7fdfbe}
 #onlineReady{width:min(430px,100%);font-size:clamp(14px,2vw,20px);padding:10px!important;background:#22676b;border:1px solid #70c9b3}
 @media(max-height:450px) and (orientation:landscape){.online-connect-dialog{gap:4px!important;padding:7px 20px!important}.online-player-grid .online-player{min-height:54px}.online-room-number{margin:0 auto 3px!important}.online-lobby-header{padding-bottom:3px}}
+
+/* v4.3: functional landscape controls (phones only). */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:560px) and (max-width:1050px){
+  /* Slide only the drawer content; keep a large, clickable tab in the viewport. */
+  .build-dock.dock-collapsed {transform:translateX(calc(100% - 1px))!important;visibility:visible!important;pointer-events:none!important;}
+  .build-dock.dock-collapsed #dockToggle {visibility:visible!important;pointer-events:auto!important;left:-48px!important;width:48px!important;z-index:42!important;}
+  .build-dock:not(.dock-collapsed) #dockToggle{left:-48px!important;width:48px!important;z-index:42!important;}
+  .build-dock.dock-collapsed .dock-upper{visibility:visible!important;}
+  .build-dock.dock-collapsed .dock-upper > :not(#dockToggle){visibility:hidden!important;pointer-events:none!important;}
+  .topbar .brand strong{font-size:10px!important;letter-spacing:0!important}
+  .topbar .brand{gap:3px!important}.topbar .right-head button{font-size:10px!important;padding:4px!important}
+  .board-foot .hint,.board-foot #hint{font-size:9px!important;line-height:1.1!important}
+  .board-foot{min-height:0!important;padding:2px 5px!important}
+  /* All facility, belt, and cargo glyphs scale from the underlying tile size. */
+  #board>.cell{font-size:clamp(8px,2.2vmin,15px)!important;line-height:1!important}
+  #board>.cell.belt,#board>.cell.belt-preview,#board>.cell.upgrader-cell{font-size:clamp(9px,2.5vmin,16px)!important}
+  #board .junction-symbol{font-size:11px!important}
+  #board .junction-ports{font-size:9px!important}
+  #board .junction-cargo{width:6px!important;height:6px!important;right:0!important;top:0!important}
+  #board .direction-marker{min-width:16px!important;min-height:15px!important;font-size:10px!important;padding:0 2px!important;border-width:1px!important;border-radius:3px!important;box-shadow:none!important}
+  #board .facility-direction-overlay{outline-width:1px!important}
+  /* Shipping and help dialogs need an actual scrollable content region. */
+  .ui-overlay{touch-action:auto!important;overscroll-behavior:contain}
+  .ui-modal{height:auto!important;min-height:0!important;max-height:calc(100dvh - 8px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .ui-modal.shipping-modal{display:flex!important;flex-direction:column!important;overflow:hidden!important}
+  .shipping-modal .modal-heading{flex:0 0 auto!important}
+  .shipping-modal .shipping-content-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .shipping-modal .shipping-editor{grid-template-rows:minmax(42px,16dvh) 28px minmax(42px,16dvh)!important;grid-template-columns:minmax(70px,1fr) 34px minmax(70px,1fr)!important;max-width:340px!important;margin:6px auto!important}
+  .shipping-modal .ship-tile{font-size:11px!important}.shipping-modal .ship-tile small{font-size:9px!important;margin-top:2px!important}
+  .shipping-modal .modal-actions{position:relative;flex:0 0 auto;margin-top:3px!important;padding-top:4px;background:#112334}
+  .shipping-modal .modal-actions button{font-size:11px!important;padding:5px 10px!important}
+}

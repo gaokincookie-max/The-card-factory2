@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8');
+const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
+const online=readFileSync(new URL('../src/online-adapter.js',import.meta.url),'utf8');
+assert.match(css,/\.build-dock\.dock-collapsed #dockToggle\s*\{[^}]*pointer-events:auto/);
+assert.match(css,/\.shipping-modal \.shipping-content-scroll\s*\{[^}]*overflow-y:auto/);
+assert.match(css,/#board \.direction-marker\s*\{[^}]*font-size:10px/);
+assert.match(css,/#board \.junction-cargo\s*\{[^}]*width:6px/);
+assert.match(app,/root\.classList\.add\('shipping-modal'\)/);
+assert.match(app,/modal\.classList\.remove\('shipping-modal'\)/);
+assert.match(app,/onExit:\(\)=>\{hideModal\(\);mainMenu\.open\(\);\}/);
+assert.match(online,/if\(!connected\)\{el\.hidden=true;onExit\?\.\(\)\}/);
+console.log('PASS v4.3 UI layout and navigation static regression');
