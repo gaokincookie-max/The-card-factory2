@@ -345,3 +345,10 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   .shipping-modal .modal-actions{position:relative;flex:0 0 auto;margin-top:3px!important;padding-top:4px;background:#112334}
   .shipping-modal .modal-actions button{font-size:11px!important;padding:5px 10px!important}
 }
+
+/* v4.4 resource zone types – match-shared and seeded */
+.cell.zone-iron{background:#435c71!important;color:#dceeff!important}
+.cell.zone-copper{background:#86553a!important;color:#fff1cc!important}
+.cell.zone-oil{background:#494e7d!important;color:#eff0ff!important}
+.cell.zone-chem{background:#426a51!important;color:#e2ffe5!important}
+.cell.zone-iron,.cell.zone-copper,.cell.zone-oil,.cell.zone-chem{font-weight:800;font-size:clamp(7px, 1.4vmin, 13px)}

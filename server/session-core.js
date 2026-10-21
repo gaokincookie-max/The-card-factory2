@@ -3,7 +3,9 @@ import {createDuel,advanceDuel,applyDuelCommand,getDuelView} from '../src/duel-m
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export function makeRoomCode(random=Math.random){let code='';for(let i=0;i<6;i++)code+=CODE_ALPHABET[Math.floor(random()*CODE_ALPHABET.length)];return code;}
 export function createSession(options={}){
- let duel=createDuel(options);
+ let matchNumber=0;
+ const freshDuel=()=>createDuel({...options,zoneSeed:matchNumber++===0?options.zoneSeed:(typeof options.nextZoneSeed==='function'?options.nextZoneSeed():Math.floor(Math.random()*4294967296))});
+ let duel=freshDuel();
  const clients=new Map();
  const suspended=new Set();
  const ready=new Set();
@@ -29,7 +31,7 @@ export function createSession(options={}){
   if(phase!=='finished')return {ok:false,error:'試合が終了していません'};
   returned.add(id);revision++;
   if(returned.size===clients.size&&suspended.size===0&&clients.size>0){
-   duel=createDuel(options);ready.clear();returned.clear();result=null;hasStarted=false;countdown=0;phase=clients.size===2?'lobby':'waiting';revision++;
+   duel=freshDuel();ready.clear();returned.clear();result=null;hasStarted=false;countdown=0;phase=clients.size===2?'lobby':'waiting';revision++;
   }
   return {ok:true};
  };

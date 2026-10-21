@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createSession,makeRoomCode} from '../server/session-core.js';
-const s=createSession();
+const s=createSession({zoneSeed:1});
 assert.equal(makeRoomCode(()=>0),'AAAAAA');
 assert.equal(s.attach('alice'),0);
 assert.equal(s.phase,'waiting');

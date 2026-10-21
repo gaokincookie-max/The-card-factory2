@@ -5,7 +5,8 @@ import {executeCommand} from './commands.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 export const DUEL_SNAPSHOT_VERSION=1;
 export function createDuel(options={}){
- const factories=[initialState(),initialState()];
+ const zoneSeed=options.zoneSeed??Math.floor(Math.random()*4294967296);
+ const factories=[initialState(zoneSeed),initialState(zoneSeed)];
  factories[0].seed=options.seeds?.[0]??1;factories[1].seed=options.seeds?.[1]??2;
  const battle=createBattle(factories[0]);battle.factories=factories;battle.multiplayer=true;
  battle.stats=clone(options.stats??{});

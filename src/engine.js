@@ -1,4 +1,5 @@
 import {cardRecipes} from "./card-recipes.js";
+import {generateResourceZones} from "./resource-zones.js";
 import {nextRandom} from "./random.js";
 import {FACTORY_ECONOMY} from "./factory-economy-config.js";
 import {runBuildings, routeBelts} from "./factory-simulation.js";
@@ -8,8 +9,7 @@ import {catalog} from './facility-catalog.js';
 import {baseRecipes,recipes} from './production-catalog.js';
 import {FACTORY_RULES} from './rules-config.js';
 export {catalog,baseRecipes,recipes};
-const zones=[[3,3],[19,3],[3,19],[19,19]];
-export function initialState(){return {tick:0,money:FACTORY_RULES.startMaterials,zones:zones.map(([x,y],id)=>({id,x,y})),buildings:[],belts:[],nextId:1,rotation:0,shipped:[],hand:Array(8).fill(null),shippingGroups:[[0,1,2,3]],shippingCooldown:0,events:[],seed:1};}
+export function initialState(zoneSeed=Math.floor(Math.random()*4294967296)){return {tick:0,money:FACTORY_RULES.startMaterials,zoneSeed,zones:generateResourceZones(zoneSeed,SIZE),buildings:[],belts:[],nextId:1,rotation:0,shipped:[],hand:Array(8).fill(null),shippingGroups:[[0,1,2,3]],shippingCooldown:0,events:[],seed:1};}
 export const footprint=(kind,rot)=>{const [w,h]=catalog[kind].size;return rot%2?[h,w]:[w,h]};
 const within=(x,y,a,b,w,h)=>x>=a&&y>=b&&x<a+w&&y<b+h;
 const bounds=b=>{const[w,h]=footprint(b.kind,b.rotation);return {x:b.x,y:b.y,w,h}};
@@ -18,7 +18,7 @@ const dir=(r)=>[[1,0],[0,1],[-1,0],[0,-1]][r%4];
 const opposite=(r)=>(r+2)%4;
 export function buildingAt(s,x,y){return s.buildings.find(b=>owns(b,x,y));}
 export function beltAt(s,x,y){return s.belts.find(b=>b.x===x&&b.y===y)}
-export function place(s,kind,x,y,rotation=0){if(!catalog[kind])return '不明な施設';const [w,h]=footprint(kind,rotation);if(x<0||y<0||x+w>SIZE||y+h>SIZE)return '盤面外です';const buildingCost=Math.max(0,Math.ceil(catalog[kind].cost*(s.rapidBuild?FACTORY_ECONOMY.rapidBuildCostMultiplier:1)));if(s.money<buildingCost)return '建築資材が不足';const mining=!!catalog[kind].resource;if(mining&&!s.zones.some(z=>z.x===x&&z.y===y&&w===2&&h===2))return '採集施設は資源ゾーンに完全一致させてください';if(!mining&&!(x+w<=11||x>=13||y+h<=11||y>=13))return '中央出荷エリアには建設できません';if(!mining&&s.zones.some(z=>!(x+w<=z.x||x>=z.x+2||y+h<=z.y||y>=z.y+2)))return '資源ゾーンと重複します';if(s.buildings.some(b=>{const q=bounds(b);return !(x+w<=q.x||x>=q.x+q.w||y+h<=q.y||y>=q.y+q.h)}))return '施設と重複します';if(s.belts.some(b=>within(b.x,b.y,x,y,w,h)))return 'ベルトと重複します';s.money-=buildingCost;if(s.rapidBuild)s.rapidBuild=false;s.buildings.push({id:s.nextId++,kind,x,y,rotation,inventory:{},progress:0,cycle:0,mode:'auto',recipe:null,output:null,dispatched:0,warehouseMode:'random',warehouseFilter:'',warehouseClock:0,warehouseTurn:0,warehouseCool:0,warehouseOut:0});return null;}
+export function place(s,kind,x,y,rotation=0){if(!catalog[kind])return '不明な施設';const [w,h]=footprint(kind,rotation);if(x<0||y<0||x+w>SIZE||y+h>SIZE)return '盤面外です';const buildingCost=Math.max(0,Math.ceil(catalog[kind].cost*(s.rapidBuild?FACTORY_ECONOMY.rapidBuildCostMultiplier:1)));if(s.money<buildingCost)return '建築資材が不足';const mining=!!catalog[kind].resource;if(mining&&!s.zones.some(z=>z.x===x&&z.y===y&&w===2&&h===2&&z.kind===kind))return 'この資源ゾーンには対応する採集施設だけ設置できます';if(!mining&&!(x+w<=11||x>=13||y+h<=11||y>=13))return '中央出荷エリアには建設できません';if(!mining&&s.zones.some(z=>!(x+w<=z.x||x>=z.x+2||y+h<=z.y||y>=z.y+2)))return '資源ゾーンと重複します';if(s.buildings.some(b=>{const q=bounds(b);return !(x+w<=q.x||x>=q.x+q.w||y+h<=q.y||y>=q.y+q.h)}))return '施設と重複します';if(s.belts.some(b=>within(b.x,b.y,x,y,w,h)))return 'ベルトと重複します';s.money-=buildingCost;if(s.rapidBuild)s.rapidBuild=false;s.buildings.push({id:s.nextId++,kind,x,y,rotation,inventory:{},progress:0,cycle:0,mode:'auto',recipe:null,output:null,dispatched:0,warehouseMode:'random',warehouseFilter:'',warehouseClock:0,warehouseTurn:0,warehouseCool:0,warehouseOut:0});return null;}
 export function remove(s,x,y){const b=buildingAt(s,x,y);if(b){s.buildings.splice(s.buildings.indexOf(b),1);return '施設を撤去しました（返還なし）';}const belt=beltAt(s,x,y);if(belt){s.belts.splice(s.belts.indexOf(belt),1);for(const q of s.belts){q.next=q.next.filter(p=>p!==belt.id);q.previous=q.previous.filter(p=>p!==belt.id);}return 'ベルトを撤去しました（上の素材も消失）';}return '撤去対象がありません';}
 // Belt endpoints: empty-to-empty paths; existing endpoints are junctions. Crossing the interior is forbidden.
 // Facility-touch endpoints resolve to the adjacent conveyor cell. Never overwrite a facility.

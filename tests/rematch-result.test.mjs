@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createSession} from '../server/session-core.js';
-const s=createSession();s.attach('a');s.attach('b');s.setReady('a',true);s.setReady('b',true);s.advance(2.5);
+const s=createSession({zoneSeed:1});s.attach('a');s.attach('b');s.setReady('a',true);s.setReady('b',true);s.advance(2.5);
 assert.equal(s.phase,'playing');
 s.duel.battle.health[1]=0;s.duel.battle.victor='team0';s.advance(.05);
 assert.equal(s.phase,'finished');assert.equal(s.view('a').result.winner,0);
@@ -10,5 +10,5 @@ assert.equal(s.returnToLobby('b').ok,true);assert.equal(s.phase,'lobby');assert.
 assert.deepEqual(s.view('a').readyTeams,[]);assert.equal(s.duel.battle.health[1],s.duel.battle.maxHealth);
 assert.equal(s.duel.battle.time,0);
 s.setReady('b',true);assert.equal(s.phase,'lobby');s.setReady('a',true);assert.equal(s.phase,'starting');
-const t=createSession();t.attach('a');t.attach('b');t.setReady('a',true);t.setReady('b',true);t.advance(2.5);t.suspend('b');t.advance(2);assert.equal(t.phase,'waiting');t.expire('b');assert.equal(t.phase,'finished');assert.equal(t.view('a').result.reason,'disconnect');assert.equal(t.view('a').result.winner,0);t.returnToLobby('a');assert.equal(t.phase,'waiting');assert.equal(t.attach('c'),1);
+const t=createSession({zoneSeed:1});t.attach('a');t.attach('b');t.setReady('a',true);t.setReady('b',true);t.advance(2.5);t.suspend('b');t.advance(2);assert.equal(t.phase,'waiting');t.expire('b');assert.equal(t.phase,'finished');assert.equal(t.view('a').result.reason,'disconnect');assert.equal(t.view('a').result.winner,0);t.returnToLobby('a');assert.equal(t.phase,'waiting');assert.equal(t.attach('c'),1);
 console.log('PASS result rematch / disconnect win');

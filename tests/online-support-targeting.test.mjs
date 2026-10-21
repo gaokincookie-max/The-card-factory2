@@ -16,7 +16,7 @@ assert.equal(planOnlineSupportTarget(swapHand,0,{team:0,column:1,row:0,destinati
 assert.equal(planOnlineSupportTarget(handFor('突貫工事'),0),null);
 assert.equal(planOnlineSupportTarget(handFor('応急処置'),1),null);
 // Proof that a targeting prompt from authoritative server doesn't spend a card either.
-const duel=createDuel();
+const duel=createDuel({zoneSeed:1});
 duel.factories[1].hand[0]={name:'応急処置'};
 const response=applyDuelCommand(duel,1,{type:'PLAY_CARD',payload:{slot:0}});
 assert.equal(response.needsTarget,true);

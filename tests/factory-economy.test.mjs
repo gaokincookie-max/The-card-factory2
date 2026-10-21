@@ -5,7 +5,7 @@ import {FACTORY_ECONOMY as cfg} from '../src/factory-economy-config.js';
 assert.equal(cfg.miningCycleSeconds,3);
 assert.equal(cfg.beltCellsPerSecond,2);
 assert.deepEqual(cfg.warehouseDispatchSeconds,{random:1.3,tag:2.2,name:3.2});
-const s=initialState();s.money=999;
+const s=initialState();s.zones=[{id:0,x:3,y:3,kind:'iron',resource:'鉄鉱石'}];s.money=999; // Legacy fixture: isolate factory cycle parity from randomized map.
 for(const [kind,x,y,rot] of [['iron',3,3,0],['smelter',8,4,0],['warehouseSmall',11,4,0],['moduleAttack',13,4,0]])assert.equal(place(s,kind,x,y,rot),null);
 for(const [name,n] of [['鉄鉱石',14],['銅鉱石',3]])s.buildings[1].inventory[name]=n;
 s.buildings[2].inventory[encodeItem({name:'鉄鉱石',mods:[]})]=3;

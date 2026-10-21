@@ -12,7 +12,7 @@ export class FactoryDuelRoom extends Room {
   this.roomId=String(randomInt(10000000,100000000));
   this.maxClients=2;
   this.autoDispose=true;
-  this.session=createSession({stats:unitStats});
+  this.session=createSession({stats:unitStats,zoneSeed:randomInt(0,4294967296),nextZoneSeed:()=>randomInt(0,4294967296)});
   this.onMessage('ready',(client,message)=>{const result=this.session.setReady(client.sessionId,message?.ready===true);client.send('ready_result',result);this.broadcastViews()});
   this.onMessage('return_to_lobby',(client)=>{client.send('return_result',this.session.returnToLobby(client.sessionId));this.broadcastViews()});
   this.onMessage('request_view',(client)=>{try{client.send('view',this.session.view(client.sessionId))}catch(e){}});
