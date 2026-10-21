@@ -352,3 +352,126 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .cell.zone-oil{background:#494e7d!important;color:#eff0ff!important}
 .cell.zone-chem{background:#426a51!important;color:#e2ffe5!important}
 .cell.zone-iron,.cell.zone-copper,.cell.zone-oil,.cell.zone-chem{font-weight:800;font-size:clamp(7px, 1.4vmin, 13px)}
+
+/* v4.5 - perspective battle stage. Visual treatment only: DOM grid order,
+   row/column hitboxes, draggable placement, commands and combat stats unchanged. */
+.combat-battlefield-3d{
+  --depth-card:clamp(45px,8.3dvh,88px);
+  position:relative; isolation:isolate; width:min(100%,850px); margin-inline:auto;
+  padding:5px clamp(12px,3vw,32px) 8px;
+  border-radius:18px; overflow:visible;
+  background:radial-gradient(ellipse at 50% 53%,#2b5364a8,#152d3c80 48%,#0a1a2a 78%),
+    repeating-linear-gradient(90deg,#ffffff06 0 1px,transparent 1px 12%);
+  border:1px solid #38576a; box-shadow:inset 0 0 38px #07111d,0 10px 30px #0004;
+}
+.combat-battlefield-3d .combat-board{
+  width:min(100%,calc(5 * var(--depth-card) + 4 * 8px));
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:clamp(2px,.6vw,8px);
+  margin-inline:auto; transform-origin:center center;
+  transform:perspective(760px) rotateX(24deg);
+  filter:drop-shadow(0 10px 7px #0007);
+}
+.combat-battlefield-3d .combat-perspective-enemy{
+  transform:perspective(760px) rotateX(-24deg) scale(.88);
+  margin-bottom:calc(var(--depth-card) * -.25);
+}
+.combat-battlefield-3d .combat-perspective-ally{
+  transform:perspective(760px) rotateX(24deg) scale(1);
+  margin-top:calc(var(--depth-card) * -.19);
+}
+.combat-battlefield-3d .combat-slot{max-width:none; width:100%;aspect-ratio:5/7;
+  box-shadow:0 4px 1px #081a28,0 8px 13px #0007;
+  backface-visibility:hidden; transition:box-shadow .14s,border-color .14s;
+}
+.combat-battlefield-3d .combat-slot:is(:focus-visible,.drop-hover){
+  outline:2px solid #ffda7b;outline-offset:2px;z-index:5;box-shadow:0 0 18px #e4c97899,0 7px 9px #0008;
+}
+.combat-battlefield-3d .combat-cast-zone{position:relative;z-index:1;width:75%;
+  min-height:clamp(8px,2dvh,19px)!important;height:clamp(8px,2dvh,19px);}
+.combat-depth-label{display:flex;align-items:center;justify-content:space-between;
+  max-width:570px;width:100%;margin:auto;font-size:9px;letter-spacing:.14em;color:#cf9094;opacity:.85;}
+.combat-depth-label span{font-size:9px;letter-spacing:0;color:#95b4c1}
+.combat-depth-ally{color:#70d5d0}
+.combat-card-face{contain:layout paint;}
+.combat-unit-illustration{position:absolute;inset:17% 2% 17%;width:96%;height:66%;
+  object-fit:contain;object-position:center;z-index:1;pointer-events:none;user-select:none;}
+.combat-card-face:has(.combat-unit-illustration) .combat-card-art{display:none}
+@media(max-height:650px) and (orientation:landscape){
+  .combat-battlefield-3d{--depth-card:clamp(30px,7.4dvh,52px);padding:1px 10px 3px;}
+  .combat-battlefield-3d .combat-perspective-enemy{margin-bottom:calc(var(--depth-card) * -.28)}
+  .combat-battlefield-3d .combat-perspective-ally{margin-top:calc(var(--depth-card) * -.21)}
+  .combat-depth-label,.combat-depth-label span{font-size:7px}
+  .combat-battlefield-3d .combat-cast-zone{min-height:6px!important;height:6px}
+}
+@media(prefers-reduced-motion:reduce){.combat-battlefield-3d .combat-slot{transition:none}}
+
+
+/* v4.6 — full-bleed battlefield, four independently sized perspective lanes.
+   DOM slot order is unchanged: enemy rear/front, allied rear/front.
+   Card illustrations remain inside their own clipped face; labels/HP stay above art. */
+.combat-view{width:100%;max-width:none;margin:0 auto 18px;padding:clamp(5px,1vw,13px) clamp(6px,1.4vw,22px);background:#0d1b2a;box-sizing:border-box}
+.combat-top{gap:8px;min-height:38px}
+.combat-top h2{font-size:clamp(12px,1.3vw,18px)}
+.combat-top p{margin:3px 0;font-size:clamp(10px,1vw,14px)}
+.combat-hp span{padding:6px 9px}
+.combat-enemy-title{margin:3px 0;color:#e6a2a2}
+.combat-battlefield-3d{
+ --lane-gap:clamp(3px,.9dvh,9px);
+ width:100%;max-width:none;margin:0 auto;box-sizing:border-box;
+ padding:clamp(4px,1dvh,12px) clamp(3px,1vw,16px);
+ border:0;border-radius:0;box-shadow:none;overflow:visible;
+ background:linear-gradient(180deg,#101b2d 0%,#173447 52%,#102d3b 100%);
+ gap:var(--lane-gap);align-items:center;
+}
+.combat-battlefield-3d::before{
+ content:'';pointer-events:none;position:absolute;inset:0;
+ background:repeating-linear-gradient(90deg,transparent 0 9.7%,#75bfc50b 9.85% 10%),
+ linear-gradient(90deg,transparent 0%,#80b4ba0a 50%,transparent 100%);
+ z-index:-1;
+}
+.combat-battlefield-3d .combat-board{
+ width:100%;max-width:none;display:flex;flex-direction:column;align-items:center;
+ gap:var(--lane-gap);margin:0;padding:0;transform:none;filter:none;
+}
+.combat-battlefield-3d .combat-perspective-enemy,
+.combat-battlefield-3d .combat-perspective-ally{transform:none;margin:0}
+.combat-battlefield-3d .combat-lane{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:clamp(3px,.8vw,14px);margin-inline:auto;box-sizing:border-box;
+ transform:perspective(1100px) rotateX(16deg);
+ transform-origin:bottom center;filter:drop-shadow(0 6px 6px #0007);
+}
+/* A single vanishing point: far to near widths always increase. */
+.combat-battlefield-3d .combat-lane-enemy-rear{width:53%;height:clamp(35px,8.2dvh,90px)}
+.combat-battlefield-3d .combat-lane-enemy-front{width:65%;height:clamp(39px,9.2dvh,105px)}
+.combat-battlefield-3d .combat-lane-ally-rear{width:81%;height:clamp(44px,10.4dvh,120px)}
+.combat-battlefield-3d .combat-lane-ally-front{width:100%;height:clamp(50px,12dvh,145px)}
+.combat-battlefield-3d .combat-slot{
+ width:100%;height:100%;min-height:0;aspect-ratio:auto;
+ box-sizing:border-box;border-radius:clamp(3px,.8vw,10px);
+ padding:clamp(2px,.45vw,8px);gap:2px;
+ box-shadow:0 4px 0 #071a27,0 8px 12px #0008;
+ font-size:clamp(8px,.9vw,13px);overflow:hidden;
+}
+.combat-battlefield-3d .combat-slot.foe{border-color:#ba6d86;background:linear-gradient(165deg,#613748,#342939)}
+.combat-battlefield-3d .combat-slot.ally{border-color:#5ba4bd;background:linear-gradient(165deg,#24566b,#153a4d)}
+.combat-battlefield-3d .combat-slot small{font-size:clamp(8px,.84vw,12px);line-height:1.1}
+.combat-battlefield-3d .empty-marker{font-size:clamp(12px,2.1vw,30px);line-height:1}
+.combat-battlefield-3d .combat-cast-zone{width:88%;height:clamp(13px,2.5dvh,27px)!important;min-height:0!important;position:relative;z-index:1}
+.combat-battlefield-3d .combat-cast-zone small{font-size:clamp(8px,.7vw,11px)}
+.combat-depth-label{width:100%;max-width:none;padding-inline:clamp(8px,2vw,26px);box-sizing:border-box}
+.combat-card-face{position:relative;width:100%;height:100%;min-height:0;isolation:isolate;contain:layout paint}
+.combat-unit-illustration{position:absolute;inset:12% 3% 19%;width:94%;height:69%;object-fit:contain;object-position:center;z-index:1}
+.combat-card-name,.combat-card-bottom,.combat-card-mods{z-index:3;position:relative}
+@media(max-height:650px) and (orientation:landscape){
+ .combat-battlefield-3d{padding:2px 5px;--lane-gap:2px}
+ .combat-battlefield-3d .combat-lane-enemy-rear{height:clamp(27px,8dvh,52px)}
+ .combat-battlefield-3d .combat-lane-enemy-front{height:clamp(31px,9dvh,59px)}
+ .combat-battlefield-3d .combat-lane-ally-rear{height:clamp(34px,10dvh,68px)}
+ .combat-battlefield-3d .combat-lane-ally-front{height:clamp(40px,11.7dvh,82px)}
+ .combat-battlefield-3d .combat-slot{padding:2px}
+ .combat-battlefield-3d .combat-slot small{font-size:8px}
+ .combat-battlefield-3d .combat-cast-zone{height:10px!important}
+ .combat-depth-label,.combat-depth-label span{font-size:7px}
+}
+@media(prefers-reduced-motion:reduce){.combat-battlefield-3d .combat-lane{transition:none}}
