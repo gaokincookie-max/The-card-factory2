@@ -87,32 +87,41 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const imageCache = new Map();
   let disposed = false;
   let lastLayout = '';
-  // Project the actual four corners of every card, not an arbitrary world-size
-  // rectangle. This preserves the 5:7 card ratio while keeping all slots in view.
+  // All twenty cards share one real 3D plane and a single perspective camera.
+  // The old fit only minimized clipping; on ultrawide battlefields it left the
+  // board as a tiny island because the scene was much deeper than it was wide.
+  // Balance the projected board shape to the viewport *before* fitting it.
   const projectionPoint = new THREE.Vector3();
   const cameraAim = new THREE.Vector3(0, 0, 0);
+  const CARD_MARGIN = 0.14;
   function fitCamera(width, height) {
     const aspect = width / height;
     camera.aspect = aspect;
-    camera.fov = aspect < 1.35 ? 49 : 45;
+    camera.fov = 45;
     camera.updateProjectionMatrix();
-    // Wide screens receive more horizontal breathing room between cards.
-    // This spacing is visual only: logical slot IDs and rules never change.
-    const columnPitch = Math.max(1.76, Math.min(3.05, aspect * 0.88));
-    const rowDepths = [4.25, 1.95, -1.95, -4.25];
-    const cardDepth = CARD_HEIGHT;
+
+    // World units are fixed across devices; only the clear spacing between
+    // columns changes. Card geometry itself always stays exactly 5:7.
+    const rowDepths = [6.75, 2.25, -2.25, -6.75];
+    const columnPitch = Math.max(CARD_WIDTH + CARD_MARGIN, Math.min(4.8, aspect * 1.06));
     const halfWidth = 2 * columnPitch + CARD_WIDTH / 2;
-    const halfDepth = Math.max(...rowDepths.map(z => Math.abs(z))) + cardDepth / 2;
-    ground.scale.set(halfWidth * 2 + 0.7, halfDepth * 2 + 0.65, 1);
+    const halfDepth = 6.75 + CARD_HEIGHT / 2;
+    ground.scale.set(halfWidth * 2 + 0.6, halfDepth * 2 + 0.6, 1);
+
     const bounds = [];
     for (const z of rowDepths) for (const col of [-2, 2]) {
       const x = col * columnPitch;
       for (const dx of [-CARD_WIDTH / 2, CARD_WIDTH / 2])
-        for (const dz of [-cardDepth / 2, cardDepth / 2])
+        for (const dz of [-CARD_HEIGHT / 2, CARD_HEIGHT / 2])
           bounds.push([x + dx, z + dz]);
     }
-    const fits = distance => {
-      camera.position.set(0, distance * 0.95, distance);
+    // A lower viewing angle gives a tabletop silhouette and makes sensible
+    // use of a widescreen viewport without stretching the actual card art.
+    // On portrait/narrow screens, raise the camera for easier targeting.
+    const elevation = aspect > 3 ? 0.32 : aspect > 2 ? 0.40 : 0.58;
+    cameraAim.z = aspect > 3 ? 4 : aspect > 2 ? 2 : 0;
+    function measure(distance) {
+      camera.position.set(0, distance * elevation, distance);
       camera.lookAt(cameraAim);
       camera.updateMatrixWorld();
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -123,16 +132,20 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
         minY = Math.min(minY, projectionPoint.y);
         maxY = Math.max(maxY, projectionPoint.y);
       }
-      // Deliberate margins prevent card clipping and leave room for highlights.
-      return minX >= -0.91 && maxX <= 0.91 && minY >= -0.87 && maxY <= 0.87;
-    };
-    let near = 2, far = 120;
-    for (let i = 0; i < 28; i++) {
+      return { minX, maxX, minY, maxY };
+    }
+    // Fill the frame while reserving a small safe margin for borders/hover.
+    // Binary search is stable across browser widths and device pixel ratios.
+    const safeX = 0.95, safeY = 0.93;
+    let near = halfDepth + 0.5, far = 200;
+    for (let i = 0; i < 36; i++) {
       const mid = (near + far) / 2;
-      if (fits(mid)) far = mid;
+      const box = measure(mid);
+      if (box.minX >= -safeX && box.maxX <= safeX &&
+          box.minY >= -safeY && box.maxY <= safeY) far = mid;
       else near = mid;
     }
-    fits(far);
+    measure(far);
     for (const [key, entry] of slots) {
       const [teamString, colString, rowString] = key.split('-');
       const team = Number(teamString), col = Number(colString), row = Number(rowString);
