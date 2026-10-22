@@ -5,7 +5,7 @@
  * the original accessible HTML battlefield fully functional.
  */
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-const CARD_WIDTH = 1;
+const CARD_WIDTH = 1.36;
 const CARD_HEIGHT = CARD_WIDTH * 7 / 5;
 const COLUMNS = 5;
 import {battleArtUrl} from './battle-art.js';
@@ -78,7 +78,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const boardMaterial = new THREE.MeshBasicMaterial({ color: '#203a4a', side: THREE.DoubleSide });
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 13), boardMaterial);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), boardMaterial);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.035;
   scene.add(ground);
@@ -86,6 +86,62 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const slots = new Map();
   const imageCache = new Map();
   let disposed = false;
+  let lastLayout = '';
+  // Project the actual four corners of every card, not an arbitrary world-size
+  // rectangle. This preserves the 5:7 card ratio while keeping all slots in view.
+  const projectionPoint = new THREE.Vector3();
+  const cameraAim = new THREE.Vector3(0, 0, 0);
+  function fitCamera(width, height) {
+    const aspect = width / height;
+    camera.aspect = aspect;
+    camera.fov = aspect < 1.35 ? 49 : 45;
+    camera.updateProjectionMatrix();
+    // Wide screens receive more horizontal breathing room between cards.
+    // This spacing is visual only: logical slot IDs and rules never change.
+    const columnPitch = Math.max(1.76, Math.min(3.05, aspect * 0.88));
+    const rowDepths = [4.25, 1.95, -1.95, -4.25];
+    const cardDepth = CARD_HEIGHT;
+    const halfWidth = 2 * columnPitch + CARD_WIDTH / 2;
+    const halfDepth = Math.max(...rowDepths.map(z => Math.abs(z))) + cardDepth / 2;
+    ground.scale.set(halfWidth * 2 + 0.7, halfDepth * 2 + 0.65, 1);
+    const bounds = [];
+    for (const z of rowDepths) for (const col of [-2, 2]) {
+      const x = col * columnPitch;
+      for (const dx of [-CARD_WIDTH / 2, CARD_WIDTH / 2])
+        for (const dz of [-cardDepth / 2, cardDepth / 2])
+          bounds.push([x + dx, z + dz]);
+    }
+    const fits = distance => {
+      camera.position.set(0, distance * 0.95, distance);
+      camera.lookAt(cameraAim);
+      camera.updateMatrixWorld();
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const [x, z] of bounds) {
+        projectionPoint.set(x, 0, z).project(camera);
+        minX = Math.min(minX, projectionPoint.x);
+        maxX = Math.max(maxX, projectionPoint.x);
+        minY = Math.min(minY, projectionPoint.y);
+        maxY = Math.max(maxY, projectionPoint.y);
+      }
+      // Deliberate margins prevent card clipping and leave room for highlights.
+      return minX >= -0.91 && maxX <= 0.91 && minY >= -0.87 && maxY <= 0.87;
+    };
+    let near = 2, far = 120;
+    for (let i = 0; i < 28; i++) {
+      const mid = (near + far) / 2;
+      if (fits(mid)) far = mid;
+      else near = mid;
+    }
+    fits(far);
+    for (const [key, entry] of slots) {
+      const [teamString, colString, rowString] = key.split('-');
+      const team = Number(teamString), col = Number(colString), row = Number(rowString);
+      const sideNear = team === getMyTeam();
+      const z = sideNear ? (row === 0 ? rowDepths[0] : rowDepths[1])
+        : (row === 0 ? rowDepths[2] : rowDepths[3]);
+      entry.mesh.position.set((col - 2) * columnPitch, 0.015, z);
+    }
+  }
   function getIllustration(name) {
     const url = battleArtUrl(name);
     if (!url) return null;
@@ -141,11 +197,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
         entry.mesh.material.needsUpdate = true;
         entry.signature = signature;
       }
-      // Local-player-relative coordinates: own side is always nearest.
-      const localSide = team === myTeam;
-      const z = localSide ? (row === 0 ? 4.35 : 2.15) : (row === 0 ? -2.15 : -4.35);
-      entry.mesh.position.set((col - 2) * 1.33, 0.015, z);
-      // All illustrations are readable from the local player's camera.
+      // Slot positions are computed together with the responsive camera below.
     }
     const bounds = container.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return;
@@ -157,10 +209,11 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     }
-    // Fit the full arena in landscape and portrait fallback windows.
-    const distance = Math.max(15.5, 16.5 / Math.max(0.66, camera.aspect));
-    camera.position.set(0, distance * .88, distance);
-    camera.lookAt(0, 0, 0);
+    const layout = `${width}:${height}:${myTeam}`;
+    if (layout !== lastLayout) {
+      fitCamera(width, height);
+      lastLayout = layout;
+    }
     renderer.render(scene, camera);
   }
   function hitAt(clientX, clientY) {
