@@ -5,9 +5,11 @@
  * the original accessible HTML battlefield fully functional.
  */
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-const CARD_WIDTH = 1.36;
+const CARD_WIDTH = 1.54;
 const CARD_HEIGHT = CARD_WIDTH * 7 / 5;
 const COLUMNS = 5;
+const TEXTURE_WIDTH = 512;
+const TEXTURE_HEIGHT = Math.round(TEXTURE_WIDTH * 7 / 5);
 import {battleArtUrl} from './battle-art.js';
 
 const THEME = Object.freeze({
@@ -17,42 +19,44 @@ const THEME = Object.freeze({
 
 function cardArtwork(unit, team, col, row, illustration = null) {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 358; // exactly 5:7, independent of screen size and perspective
+  canvas.width = TEXTURE_WIDTH;
+  canvas.height = TEXTURE_HEIGHT; // exactly 5:7, independent of screen size and perspective
   const ctx = canvas.getContext('2d');
   const colors = THEME[team];
+  const scaleUnit = canvas.width / 256;
+  const px = (value) => value * scaleUnit;
   ctx.fillStyle = unit ? colors.background : colors.empty;
-  ctx.fillRect(0, 0, 256, 358);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = colors.border;
-  ctx.lineWidth = 10;
-  ctx.strokeRect(5, 5, 246, 348);
+  ctx.lineWidth = px(10);
+  ctx.strokeRect(px(5), px(5), canvas.width - px(10), canvas.height - px(10));
   ctx.fillStyle = '#e6f5ff';
   ctx.textAlign = 'center';
   if (!unit) {
-    ctx.font = '22px sans-serif';
-    ctx.fillText(`${col + 1}列 ${row ? '後衛' : '前衛'}`, 128, 141);
-    ctx.font = '62px sans-serif';
-    ctx.fillText('＋', 128, 245);
+    ctx.font = `${px(22)}px sans-serif`;
+    ctx.fillText(`${col + 1}列 ${row ? '後衛' : '前衛'}`, canvas.width / 2, px(141));
+    ctx.font = `${px(62)}px sans-serif`;
+    ctx.fillText('＋', canvas.width / 2, px(245));
     return canvas;
   }
-  ctx.font = 'bold 19px sans-serif';
+  ctx.font = `bold ${px(19)}px sans-serif`;
   const name = unit.name || 'UNIT';
   // Clip long names instead of allowing them to deform the card geometry.
-  ctx.fillText(name, 128, 35, 224);
+  ctx.fillText(name, canvas.width / 2, px(35), px(224));
   if (illustration) {
-    const scale = Math.min(216 / illustration.width, 238 / illustration.height);
+    const scale = Math.min(px(216) / illustration.width, px(238) / illustration.height);
     const w = illustration.width * scale, h = illustration.height * scale;
-    ctx.drawImage(illustration, 128 - w / 2, 54 + (238 - h) / 2, w, h);
+    ctx.drawImage(illustration, canvas.width / 2 - w / 2, px(54) + (px(238) - h) / 2, w, h);
   } else {
-    ctx.font = '72px sans-serif';
-    ctx.fillText(unit.mods?.includes('attack') ? '⚔' : unit.mods?.includes('hp') ? '◆' : '✦', 128, 206);
+    ctx.font = `${px(72)}px sans-serif`;
+    ctx.fillText(unit.mods?.includes('attack') ? '⚔' : unit.mods?.includes('hp') ? '◆' : '✦', canvas.width / 2, px(206));
   }
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(`HP ${unit.hp}/${unit.maxHP}`, 128, 306, 232);
+  ctx.font = `bold ${px(20)}px sans-serif`;
+  ctx.fillText(`HP ${unit.hp}/${unit.maxHP}`, canvas.width / 2, px(306), px(232));
   ctx.fillStyle = '#142734';
-  ctx.fillRect(19, 323, 218, 12);
+  ctx.fillRect(px(19), px(323), px(218), px(12));
   ctx.fillStyle = '#60d7ae';
-  ctx.fillRect(19, 323, 218 * (unit.maxHP ? Math.max(0, unit.hp / unit.maxHP) : 0), 12);
+  ctx.fillRect(px(19), px(323), px(218) * (unit.maxHP ? Math.max(0, unit.hp / unit.maxHP) : 0), px(12));
   return canvas;
 }
 
@@ -69,6 +73,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   catch (error) { console.info('WebGL unavailable; using HTML slots.', error); return null; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const maxAnisotropy = renderer.capabilities.getMaxAnisotropy?.() || 1;
   renderer.domElement.className = 'combat-three-canvas';
   renderer.domElement.setAttribute('aria-label', '3D戦場。スロットをタップして選択できます');
   renderer.domElement.style.touchAction = 'none';
@@ -96,17 +101,46 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const CARD_MARGIN = 0.14;
   function fitCamera(width, height) {
     const aspect = width / height;
+    const profile = aspect > 2.8
+      ? {
+          fov: 34,
+          elevation: 0.46,
+          aimZ: 0.8,
+          columnPitch: 2.62,
+          rowDepths: [5.4, 1.7, -1.7, -5.4],
+          safeX: 0.985,
+          safeY: 0.968,
+          boardPadding: 0.85,
+        }
+      : aspect > 1.9
+        ? {
+            fov: 36,
+            elevation: 0.56,
+            aimZ: 0.45,
+            columnPitch: 2.42,
+            rowDepths: [5.0, 1.58, -1.58, -5.0],
+            safeX: 0.982,
+            safeY: 0.962,
+            boardPadding: 0.8,
+          }
+        : {
+            fov: 39,
+            elevation: 0.7,
+            aimZ: 0.1,
+            columnPitch: 2.16,
+            rowDepths: [4.6, 1.38, -1.38, -4.6],
+            safeX: 0.978,
+            safeY: 0.955,
+            boardPadding: 0.75,
+          };
+    const { fov, elevation, aimZ, columnPitch, rowDepths, safeX, safeY, boardPadding } = profile;
     camera.aspect = aspect;
-    camera.fov = 45;
+    camera.fov = fov;
     camera.updateProjectionMatrix();
 
-    // World units are fixed across devices; only the clear spacing between
-    // columns changes. Card geometry itself always stays exactly 5:7.
-    const rowDepths = [6.75, 2.25, -2.25, -6.75];
-    const columnPitch = Math.max(CARD_WIDTH + CARD_MARGIN, Math.min(4.8, aspect * 1.06));
     const halfWidth = 2 * columnPitch + CARD_WIDTH / 2;
-    const halfDepth = 6.75 + CARD_HEIGHT / 2;
-    ground.scale.set(halfWidth * 2 + 0.6, halfDepth * 2 + 0.6, 1);
+    const halfDepth = Math.max(...rowDepths.map((value) => Math.abs(value))) + CARD_HEIGHT / 2;
+    ground.scale.set(halfWidth * 2 + boardPadding, halfDepth * 2 + boardPadding, 1);
 
     const bounds = [];
     for (const z of rowDepths) for (const col of [-2, 2]) {
@@ -115,11 +149,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
         for (const dz of [-CARD_HEIGHT / 2, CARD_HEIGHT / 2])
           bounds.push([x + dx, z + dz]);
     }
-    // A lower viewing angle gives a tabletop silhouette and makes sensible
-    // use of a widescreen viewport without stretching the actual card art.
-    // On portrait/narrow screens, raise the camera for easier targeting.
-    const elevation = aspect > 3 ? 0.32 : aspect > 2 ? 0.40 : 0.58;
-    cameraAim.z = aspect > 3 ? 4 : aspect > 2 ? 2 : 0;
+    cameraAim.z = aimZ;
     function measure(distance) {
       camera.position.set(0, distance * elevation, distance);
       camera.lookAt(cameraAim);
@@ -134,15 +164,11 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       }
       return { minX, maxX, minY, maxY };
     }
-    // Fill the frame while reserving a small safe margin for borders/hover.
-    // Binary search is stable across browser widths and device pixel ratios.
-    const safeX = 0.95, safeY = 0.93;
-    let near = halfDepth + 0.5, far = 200;
+    let near = Math.max(2.5, halfDepth * 0.55), far = 120;
     for (let i = 0; i < 36; i++) {
       const mid = (near + far) / 2;
       const box = measure(mid);
-      if (box.minX >= -safeX && box.maxX <= safeX &&
-          box.minY >= -safeY && box.maxY <= safeY) far = mid;
+      if (box.minX >= -safeX && box.maxX <= safeX && box.minY >= -safeY && box.maxY <= safeY) far = mid;
       else near = mid;
     }
     measure(far);
@@ -176,6 +202,10 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const textureFromCanvas = (canvas) => {
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = Math.min(8, maxAnisotropy);
+    texture.generateMipmaps = true;
     return texture;
   };
   for (const team of [0, 1]) {
