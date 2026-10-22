@@ -1,7 +1,7 @@
 /** Mobile board gestures: one-finger pan, two-finger pinch, desktop unchanged. */
 export function installMobileBoardControls({viewport, board, enabled = () => true}) {
   if (!viewport || !board) return () => {};
-  const mobile = () => matchMedia('(pointer:coarse) and (orientation:landscape)').matches;
+  const mobile = () => (matchMedia('(pointer:coarse) and (orientation:landscape)').matches || matchMedia('(pointer:coarse) and (orientation:portrait) and (max-width:750px)').matches);
   let zoom = 1;
   const pointers = new Map();
   let drag = null;

@@ -20,7 +20,7 @@ export function createOnlineAdapter({state,battle,onView,onStatus,onExit}) {
  <div class="online-player-grid"><div id="onlinePlayer0" class="online-player">P1 <span>参加待ち</span></div><div id="onlinePlayer1" class="online-player">P2 <span>参加待ち</span></div></div>
  <button id="onlineReady" type="button">✓ 準備OK</button><p id="onlineWaitHint">相手の参加を待っています</p>
  <button id="onlineLeave" type="button">ルームを退出</button></div>
- <div id="onlineStarting" class="online-starting" hidden><small>MATCH STARTING</small><strong>P1 <em>VS</em> P2</strong><span>DEPLOYMENT PHASE · 120秒</span></div>
+ <div id="onlineStarting" class="online-starting" hidden><small>MATCH STARTING</small><strong>P1 <em>VS</em> P2</strong><span>DEPLOYMENT PHASE · 300秒</span></div>
  <div id="onlineResult" class="online-result" hidden><small>MATCH FINISHED</small><strong id="onlineOutcome">VICTORY</strong><p id="onlineResultReason"></p><p id="onlineResultStats"></p><button id="onlineReturnLobby" type="button">対戦ロビーへ戻る</button><p id="onlineReturnHint"></p></div>
  <p id="onlineStatus" role="status">未接続</p></section>`;
  document.body.append(el);

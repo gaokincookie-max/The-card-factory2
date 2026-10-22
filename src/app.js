@@ -110,7 +110,7 @@ document.querySelector('#belts').onclick=()=>{tool=tool==='belt'?'inspect':'belt
 
 
 document.querySelector('#pauseInfo').onclick=()=>{const d=modalBase('基本操作');d.append(elem('p','','建築：下のメニューで選び、盤面をタップ→ ✓で決定、↻で回転、×で解除。施設をタップすると詳細画面が開きます。ベルトは始点と終点を選びます。出荷区画は境界線をタップして設定します。'))};
-document.querySelector('#portraitClose').onclick=()=>document.querySelector('#portraitHint').style.display='none';
+// Portrait phones use the CSS-rotated landscape layout; no orientation prompt.
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){hideModal();pending=null;tool='inspect';showFloating(null);drawDock();draw()}if(e.key.toLowerCase()==='r'&&pending){state.rotation=(state.rotation+1)%4;draw()}});
 window.addEventListener('resize',()=>{directionOverlaySignature=null;draw();positionFloat()});document.querySelector('.board-scroll').addEventListener('scroll',positionFloat);
 // Decouple simulation and HUD from board rendering.  A rendering exception must never stop time.

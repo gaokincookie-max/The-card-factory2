@@ -486,3 +486,48 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .combat-battlefield.has-three .combat-cast-zone,
 .combat-battlefield.has-three .combat-depth-label{display:none}
 @media (orientation:landscape) and (max-height:550px){.combat-three-container{height:clamp(200px,46dvh,330px)}}
+
+/* v4.7.4: Flat, readable 2D battlefield. The same slots remain the input source. */
+.combat-mode-toggle{white-space:nowrap;min-height:38px;align-self:center;font-weight:700;border-color:#5b91a5;background:#20485b}
+.combat-battlefield.flat-2d{display:flex;flex-direction:column;align-items:stretch;gap:8px;overflow:visible;padding:5px 4px}
+.combat-battlefield.flat-2d::before{display:none}
+.combat-battlefield.flat-2d .combat-board{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:none;transform:none;filter:none;margin:0;padding:0}
+.combat-battlefield.flat-2d .combat-perspective-enemy,.combat-battlefield.flat-2d .combat-perspective-ally{transform:none;margin:0;width:100%}
+.combat-battlefield.flat-2d .combat-lane{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(4px,1vw,12px);width:min(100%,720px)!important;height:auto!important;transform:none;filter:none;margin-inline:auto}
+.combat-battlefield.flat-2d .combat-slot{width:100%;height:auto;max-width:none;aspect-ratio:5/7;transform:none;border-radius:7px;padding:0}
+.combat-battlefield.flat-2d .combat-cast-zone{display:flex;width:min(100%,720px);min-height:32px!important;height:32px!important;margin:0 auto;border-radius:7px}
+.combat-battlefield.flat-2d .combat-depth-label{display:flex;width:min(100%,720px);justify-content:space-between;margin:auto}
+@media (orientation:landscape) and (max-height:650px){
+ .combat-battlefield.flat-2d{gap:3px}
+ .combat-battlefield.flat-2d .combat-board{gap:3px}
+ .combat-battlefield.flat-2d .combat-lane{width:min(100%,610px)!important;gap:5px}
+ .combat-battlefield.flat-2d .combat-cast-zone{height:20px!important;min-height:20px!important}
+ .combat-mode-toggle{padding:6px 9px;font-size:12px}
+}
+
+/* v4.7.5: portrait phones display the entire game in a landscape coordinate plane.
+   The OS orientation is unchanged; users hold the phone horizontally. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  html { overflow:hidden; width:100%; height:100%; }
+  body {
+    position:fixed; left:0; top:0; margin:0; overflow:auto;
+    width:100dvh; height:100dvw; min-height:0;
+    transform-origin:top left; transform:translateX(100dvw) rotate(90deg);
+    overscroll-behavior:contain;
+  }
+  #portraitHint { display:none!important; }
+  .combat-three-container { height:clamp(200px,46dvw,330px); }
+  .topbar { min-height:50px; padding:4px 8px; }
+  .main-menu { position:fixed; inset:0; width:100%;height:100%; }
+  .menu-header { min-height:51px; padding:6px 15px; }
+  .menu-main { grid-template-columns:165px minmax(0,1fr) 50px; }
+  .menu-nav { padding:8px; gap:5px; }
+  .menu-nav-btn { min-height:40px; padding:5px 9px; font-size:12px; }
+  .menu-center { padding:8px 14px; }
+  .menu-center h1 { font-size:25px;margin:3px 0; }
+  .menu-content { gap:8px;grid-template-columns:minmax(150px,.8fr) minmax(180px,1fr); }
+  .menu-choice { min-height:44px;padding:7px 25px 7px 10px; }
+  .menu-detail { min-height:130px;padding:10px; }
+  .board-scroll { height:calc(100dvw - 165px); }
+  .card-detail-grid { grid-template-columns:1fr .9fr 1fr;gap:7px; }
+}

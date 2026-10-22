@@ -262,7 +262,11 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   function hitAt(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();
     if (!r.width || !r.height) return null;
-    pointer.set((clientX - r.left) / r.width * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    // CSS-rotated portrait phones have swapped physical axes.
+    const rotated = matchMedia('(orientation:portrait) and (pointer:coarse) and (max-width:750px)').matches;
+    const nx = rotated ? (clientY-r.top)/r.height : (clientX-r.left)/r.width;
+    const ny = rotated ? 1-(clientX-r.left)/r.width : (clientY-r.top)/r.height;
+    pointer.set(nx*2-1, 1-ny*2);
     raycaster.setFromCamera(pointer, camera);
     return raycaster.intersectObjects(slotObjects, false)[0]?.object?.userData || null;
   }
