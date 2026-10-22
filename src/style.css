@@ -475,3 +475,14 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
  .combat-depth-label,.combat-depth-label span{font-size:7px}
 }
 @media(prefers-reduced-motion:reduce){.combat-battlefield-3d .combat-lane{transition:none}}
+
+/* v4.7: WebGL table. Original HTML lanes remain as a functional fallback. */
+.combat-battlefield.has-three{display:block;position:relative;padding:0 6px 4px;overflow:hidden}
+.combat-three-container{height:clamp(260px,50dvh,560px);width:100%;position:relative}
+.combat-three-container[hidden]{display:none}
+.combat-three-canvas{display:block;width:100%;height:100%;border:1px solid #4d7188;border-radius:9px;cursor:pointer;box-sizing:border-box}
+.combat-three-canvas.drop-ready{border-color:#79ddd2}
+.combat-battlefield.has-three .combat-board,
+.combat-battlefield.has-three .combat-cast-zone,
+.combat-battlefield.has-three .combat-depth-label{display:none}
+@media (orientation:landscape) and (max-height:550px){.combat-three-container{height:clamp(200px,46dvh,330px)}}
