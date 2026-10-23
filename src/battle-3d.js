@@ -5,12 +5,60 @@
  * the original accessible HTML battlefield fully functional.
  */
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+const CARD_WIDTH = 1.54;
+const CARD_HEIGHT = CARD_WIDTH * 7 / 5;
 const COLUMNS = 5;
+const TEXTURE_WIDTH = 512;
+const TEXTURE_HEIGHT = Math.round(TEXTURE_WIDTH * 7 / 5);
 import {battleArtUrl} from './battle-art.js';
-import {cardArtwork} from './battle-card-texture.js';
-import {CARD_WIDTH, CARD_HEIGHT} from './battle-3d-layout.js';
-import {cameraProfile, boardBounds, slotPosition, clientToCanvasUV} from './battle-3d-layout.js';
 
+const THEME = Object.freeze({
+  ally: { border: '#69cce5', background: '#17475e', empty: '#194153' },
+  enemy: { border: '#e7a0aa', background: '#563543', empty: '#50303d' },
+});
+
+function cardArtwork(unit, team, col, row, illustration = null) {
+  const canvas = document.createElement('canvas');
+  canvas.width = TEXTURE_WIDTH;
+  canvas.height = TEXTURE_HEIGHT; // exactly 5:7, independent of screen size and perspective
+  const ctx = canvas.getContext('2d');
+  const colors = THEME[team];
+  const scaleUnit = canvas.width / 256;
+  const px = (value) => value * scaleUnit;
+  ctx.fillStyle = unit ? colors.background : colors.empty;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = colors.border;
+  ctx.lineWidth = px(10);
+  ctx.strokeRect(px(5), px(5), canvas.width - px(10), canvas.height - px(10));
+  ctx.fillStyle = '#e6f5ff';
+  ctx.textAlign = 'center';
+  if (!unit) {
+    ctx.font = `${px(22)}px sans-serif`;
+    ctx.fillText(`${col + 1}列 ${row ? '後衛' : '前衛'}`, canvas.width / 2, px(141));
+    ctx.font = `${px(62)}px sans-serif`;
+    ctx.fillText('＋', canvas.width / 2, px(245));
+    return canvas;
+  }
+  ctx.font = `bold ${px(19)}px sans-serif`;
+  const name = unit.name || 'UNIT';
+  // Clip long names instead of allowing them to deform the card geometry.
+  ctx.fillText(name, canvas.width / 2, px(35), px(224));
+  if (illustration) {
+    const scale = Math.min(px(216) / illustration.width, px(238) / illustration.height);
+    const w = illustration.width * scale, h = illustration.height * scale;
+    ctx.drawImage(illustration, canvas.width / 2 - w / 2, px(54) + (px(238) - h) / 2, w, h);
+  } else {
+    ctx.font = `${px(72)}px sans-serif`;
+    ctx.fillText(unit.mods?.includes('attack') ? '⚔' : unit.mods?.includes('hp') ? '◆' : '✦', canvas.width / 2, px(206));
+  }
+  ctx.font = `bold ${px(20)}px sans-serif`;
+  ctx.fillText(`HP ${unit.hp}/${unit.maxHP}`, canvas.width / 2, px(306), px(232));
+  ctx.fillStyle = '#142734';
+  ctx.fillRect(px(19), px(323), px(218), px(12));
+  ctx.fillStyle = '#60d7ae';
+  ctx.fillRect(px(19), px(323), px(218) * (unit.maxHP ? Math.max(0, unit.hp / unit.maxHP) : 0), px(12));
+  return canvas;
+}
 
 export async function createBattle3D(container, getBattle, getMyTeam, onSlotClick) {
   if (!('WebGLRenderingContext' in window)) return null;
@@ -53,15 +101,54 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const CARD_MARGIN = 0.14;
   function fitCamera(width, height) {
     const aspect = width / height;
-    const profile = cameraProfile(aspect);
+    const profile = aspect > 2.8
+      ? {
+          fov: 34,
+          elevation: 0.46,
+          aimZ: 0.8,
+          columnPitch: 2.62,
+          rowDepths: [5.4, 1.7, -1.7, -5.4],
+          safeX: 0.985,
+          safeY: 0.968,
+          boardPadding: 0.85,
+        }
+      : aspect > 1.9
+        ? {
+            fov: 36,
+            elevation: 0.56,
+            aimZ: 0.45,
+            columnPitch: 2.42,
+            rowDepths: [5.0, 1.58, -1.58, -5.0],
+            safeX: 0.982,
+            safeY: 0.962,
+            boardPadding: 0.8,
+          }
+        : {
+            fov: 39,
+            elevation: 0.7,
+            aimZ: 0.1,
+            columnPitch: 2.16,
+            rowDepths: [4.6, 1.38, -1.38, -4.6],
+            safeX: 0.978,
+            safeY: 0.955,
+            boardPadding: 0.75,
+          };
     const { fov, elevation, aimZ, columnPitch, rowDepths, safeX, safeY, boardPadding } = profile;
     camera.aspect = aspect;
     camera.fov = fov;
     camera.updateProjectionMatrix();
 
-    const { halfDepth, groundWidth, groundDepth, corners: bounds } = boardBounds(columnPitch, rowDepths, boardPadding);
-    ground.scale.set(groundWidth, groundDepth, 1);
+    const halfWidth = 2 * columnPitch + CARD_WIDTH / 2;
+    const halfDepth = Math.max(...rowDepths.map((value) => Math.abs(value))) + CARD_HEIGHT / 2;
+    ground.scale.set(halfWidth * 2 + boardPadding, halfDepth * 2 + boardPadding, 1);
 
+    const bounds = [];
+    for (const z of rowDepths) for (const col of [-2, 2]) {
+      const x = col * columnPitch;
+      for (const dx of [-CARD_WIDTH / 2, CARD_WIDTH / 2])
+        for (const dz of [-CARD_HEIGHT / 2, CARD_HEIGHT / 2])
+          bounds.push([x + dx, z + dz]);
+    }
     cameraAim.z = aimZ;
     function measure(distance) {
       camera.position.set(0, distance * elevation, distance);
@@ -88,8 +175,10 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
     for (const [key, entry] of slots) {
       const [teamString, colString, rowString] = key.split('-');
       const team = Number(teamString), col = Number(colString), row = Number(rowString);
-      const { x, z } = slotPosition(team, col, row, getMyTeam(), columnPitch, rowDepths);
-      entry.mesh.position.set(x, 0.015, z);
+      const sideNear = team === getMyTeam();
+      const z = sideNear ? (row === 0 ? rowDepths[0] : rowDepths[1])
+        : (row === 0 ? rowDepths[2] : rowDepths[3]);
+      entry.mesh.position.set((col - 2) * columnPitch, 0.015, z);
     }
   }
   function getIllustration(name) {
@@ -172,11 +261,12 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   }
   function hitAt(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();
-    // On portrait mobile the whole viewport is rotated rather than individual cards.
+    if (!r.width || !r.height) return null;
+    // CSS-rotated portrait phones have swapped physical axes.
     const rotated = matchMedia('(orientation:portrait) and (pointer:coarse) and (max-width:750px)').matches;
-    const uv = clientToCanvasUV(clientX, clientY, r, rotated);
-    if (!uv) return null;
-    pointer.set(uv.x * 2 - 1, 1 - uv.y * 2);
+    const nx = rotated ? (clientY-r.top)/r.height : (clientX-r.left)/r.width;
+    const ny = rotated ? (r.right-clientX)/r.width : (clientY-r.top)/r.height;
+    pointer.set(nx*2-1, 1-ny*2);
     raycaster.setFromCamera(pointer, camera);
     return raycaster.intersectObjects(slotObjects, false)[0]?.object?.userData || null;
   }

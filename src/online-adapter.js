@@ -1,3 +1,4 @@
+import {gameViewportElement} from './viewport-coordinates.js';
 import {planOnlineSupportTarget} from './online-support-planner.js';
 import {ONLINE_SERVER} from './network-config.js';
 /** Shared presentation, two command transports. The online adapter never advances simulation. */
@@ -23,7 +24,7 @@ export function createOnlineAdapter({state,battle,onView,onStatus,onExit}) {
  <div id="onlineStarting" class="online-starting" hidden><small>MATCH STARTING</small><strong>P1 <em>VS</em> P2</strong><span>DEPLOYMENT PHASE · 300秒</span></div>
  <div id="onlineResult" class="online-result" hidden><small>MATCH FINISHED</small><strong id="onlineOutcome">VICTORY</strong><p id="onlineResultReason"></p><p id="onlineResultStats"></p><button id="onlineReturnLobby" type="button">対戦ロビーへ戻る</button><p id="onlineReturnHint"></p></div>
  <p id="onlineStatus" role="status">未接続</p></section>`;
- document.body.append(el);
+ gameViewportElement().append(el);
  const $=id=>el.querySelector('#'+id),status=msg=>{$('onlineStatus').textContent=msg;onStatus?.(msg)};
 
  const url=()=>ONLINE_SERVER;
