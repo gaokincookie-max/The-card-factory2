@@ -556,3 +556,36 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 }
 /* Prevent Safari native zoom or swipe navigation while touching the factory grid. */
 .board-scroll {touch-action:none;overscroll-behavior:contain;}
+
+/* v4.7.7: anchor the builder to the unrotated game body, not Safari's
+   visual viewport. iOS may resolve position:fixed against the wrong axis
+   inside a transformed element. The body is our landscape containing block. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  body { position:fixed!important; width:100dvh!important; height:100dvw!important; }
+  .build-dock:not([hidden]) {
+    position:absolute!important;
+    left:auto!important;
+    right:0!important;
+    top:64px!important;
+    bottom:5px!important;
+    width:clamp(170px,27dvh,220px)!important;
+    max-width:34%!important;
+    height:auto!important;
+    max-height:none!important;
+    transform:none;
+  }
+  .build-dock .dock-upper {
+    flex:0 0 auto!important;
+    max-height:58%!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+  }
+  .build-dock .building-cards { min-height:0!important; overflow-y:auto!important; }
+  .build-dock.dock-collapsed {
+    transform:translateX(calc(100% - 1px))!important;
+  }
+  .build-dock.dock-collapsed #dockToggle {
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+}
