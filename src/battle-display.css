@@ -1,0 +1,30 @@
+/* v4.7: WebGL table. Original HTML lanes remain as a functional fallback. */
+.combat-battlefield.has-three{display:block;position:relative;padding:0 6px 4px;overflow:hidden}
+.combat-three-container{height:clamp(260px,50dvh,560px);width:100%;position:relative}
+.combat-three-container[hidden]{display:none}
+.combat-three-canvas{display:block;width:100%;height:100%;border:1px solid #4d7188;border-radius:9px;cursor:pointer;box-sizing:border-box}
+.combat-three-canvas.drop-ready{border-color:#79ddd2}
+.combat-battlefield.has-three .combat-board,
+.combat-battlefield.has-three .combat-cast-zone,
+.combat-battlefield.has-three .combat-depth-label{display:none}
+@media (orientation:landscape) and (max-height:550px){.combat-three-container{height:clamp(200px,46dvh,330px)}}
+
+/* v4.7.4: Flat, readable 2D battlefield. The same slots remain the input source. */
+.combat-mode-toggle{white-space:nowrap;min-height:38px;align-self:center;font-weight:700;border-color:#5b91a5;background:#20485b}
+.combat-battlefield.flat-2d{display:flex;flex-direction:column;align-items:stretch;gap:8px;overflow:visible;padding:5px 4px}
+.combat-battlefield.flat-2d::before{display:none}
+.combat-battlefield.flat-2d .combat-board{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:none;transform:none;filter:none;margin:0;padding:0}
+.combat-battlefield.flat-2d .combat-perspective-enemy,.combat-battlefield.flat-2d .combat-perspective-ally{transform:none;margin:0;width:100%}
+.combat-battlefield.flat-2d .combat-lane{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(4px,1vw,12px);width:min(100%,720px)!important;height:auto!important;transform:none;filter:none;margin-inline:auto}
+.combat-battlefield.flat-2d .combat-slot{width:100%;height:auto;max-width:none;aspect-ratio:5/7;transform:none;border-radius:7px;padding:0}
+.combat-battlefield.flat-2d .combat-cast-zone{display:flex;width:min(100%,720px);min-height:32px!important;height:32px!important;margin:0 auto;border-radius:7px}
+.combat-battlefield.flat-2d .combat-depth-label{display:flex;width:min(100%,720px);justify-content:space-between;margin:auto}
+@media (orientation:landscape) and (max-height:650px){
+ .combat-battlefield.flat-2d{gap:3px}
+ .combat-battlefield.flat-2d .combat-board{gap:3px}
+ .combat-battlefield.flat-2d .combat-lane{width:min(100%,610px)!important;gap:5px}
+ .combat-battlefield.flat-2d .combat-cast-zone{height:20px!important;min-height:20px!important}
+ .combat-mode-toggle{padding:6px 9px;font-size:12px}
+}
+
+

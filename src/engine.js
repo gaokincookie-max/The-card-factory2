@@ -1,4 +1,5 @@
 import {cardRecipes} from "./card-recipes.js";
+import {isUnitCard} from "./card-catalog.js";
 import {generateResourceZones} from "./resource-zones.js";
 import {nextRandom} from "./random.js";
 import {FACTORY_ECONOMY} from "./factory-economy-config.js";
@@ -54,7 +55,7 @@ export const itemName=v=>typeof v==='string'?v:v?.name;
 export const itemMods=v=>typeof v==='string'?[]:(v?.mods||[]);
 export const encodeItem=v=>JSON.stringify(typeof v==='string'?{name:v,mods:[]}:v);
 export const decodeItem=k=>{try{const v=JSON.parse(k);return v&&v.name?v:{name:k,mods:[]}}catch{return {name:k,mods:[]}}};
-export const isUnit=name=>Object.values(cardRecipes).flat().some(r=>r.name===name&&r.cardType==='ユニット');
+export const isUnit = isUnitCard;
 export function setShippingGroups(s,groups){const flat=groups.flat().sort((a,b)=>a-b);if(flat.join(',')!=='0,1,2,3'||groups.some(g=>!g.length||!g.every(n=>n>=0&&n<4)))return '区画設定が不正です';for(const g of groups){const reached=new Set([g[0]]);let changed=true;while(changed){changed=false;for(const c of g)if(!reached.has(c)&&[...reached].some(v=>Math.abs(Math.floor(v/2)-Math.floor(c/2))+Math.abs(v%2-c%2)===1)){reached.add(c);changed=true;}}if(reached.size!==g.length)return '対角の飛び地区画は作れません';}if(s.shippingCooldown>0)return '区画変更のクールタイム中です';s.shippingGroups=groups.map(g=>[...g]);s.shippingCooldown=FACTORY_ECONOMY.shippingPartitionCooldownSeconds;return null;}
 const cellSlots=[[0,1],[2,3],[6,7],[4,5]];
 export function shippingCell(s,x,y,item){const c=(y-SHIP_Y)*2+(x-SHIP_X);if(c<0||c>3)return false;const group=s.shippingGroups.find(g=>g.includes(c))||[0,1,2,3];const slots=group.flatMap(i=>cellSlots[i]).sort((a,b)=>a-b);const dest=slots.find(i=>s.hand[i]===null);if(dest===undefined)return false;s.hand[dest]=item;s.shipped.push(item);return true;}
