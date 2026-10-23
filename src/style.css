@@ -514,7 +514,7 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
     position:absolute; top:0; left:100dvw;
     width:100dvh; height:100dvw; min-height:0;
     transform-origin:top left; transform:rotate(90deg);
-    overflow:auto; overscroll-behavior:contain;
+    overflow:hidden; overscroll-behavior:contain;
     isolation:isolate;
   }
   #portraitHint {display:none!important}
@@ -555,4 +555,46 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   .menu-choice{min-height:44px;padding:7px 25px 7px 10px}
   .menu-detail{min-height:130px;padding:10px}
   .card-detail-grid{grid-template-columns:1fr .9fr 1fr;gap:7px}
+}
+
+/* v4.7.9: Virtual-landscape factory dock. Reserve space, rather than layering
+   a fixed drawer over a scrollable transformed board on iOS Safari. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  #gameViewport {
+    --phone-dock-width: clamp(150px, 25dvh, 210px);
+    --phone-header-height: 83px;
+  }
+  #gameViewport .workarea:not([hidden]) {
+    position:relative;
+    width:calc(100% - var(--phone-dock-width) - 48px);
+    max-width:none;
+    height:calc(100% - var(--phone-header-height));
+    padding:4px!important;
+    overflow:hidden;
+  }
+  #gameViewport .factory-panel {height:100%;display:flex;flex-direction:column;min-height:0;}
+  #gameViewport .board-scroll {
+    flex:1 1 auto;
+    height:auto!important;
+    min-height:0!important;
+    overflow:auto;
+  }
+  #gameViewport .board-foot {flex:0 0 auto;}
+  #gameViewport #dock:not([hidden]) {
+    position:absolute!important;
+    inset:var(--phone-header-height) 0 4px auto!important;
+    width:var(--phone-dock-width)!important;
+    max-width:none!important;
+    height:auto!important;
+    z-index:80!important;
+    overflow:visible!important;
+  }
+  #gameViewport #dock .dock-upper {flex:0 0 auto;max-height:56%;min-height:0;}
+  #gameViewport #dock .building-cards {flex:1 1 auto;min-height:0;overflow-y:auto!important;}
+  #gameViewport #dock.dock-collapsed {
+    transform:translateX(calc(100% - 1px))!important;
+    pointer-events:none!important;
+  }
+  #gameViewport #dock.dock-collapsed #dockToggle {pointer-events:auto!important;}
+  #gameViewport .battle-preview:not([hidden]) {margin:2px 5px;max-height:calc(100% - 90px);overflow:auto;}
 }
