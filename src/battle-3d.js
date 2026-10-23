@@ -242,10 +242,10 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       }
       // Slot positions are computed together with the responsive camera below.
     }
-    const bounds = container.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-    const width = Math.round(bounds.width);
-    const height = Math.round(bounds.height);
+    // Layout dimensions are pre-transform: getBoundingClientRect swaps axes when the entire page is rotated.
+    const width = Math.round(container.clientWidth);
+    const height = Math.round(container.clientHeight);
+    if (!width || !height) return;
     if (renderer.domElement.width !== Math.round(width * renderer.getPixelRatio()) ||
         renderer.domElement.height !== Math.round(height * renderer.getPixelRatio())) {
       renderer.setSize(width, height, false);
@@ -265,7 +265,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
     // CSS-rotated portrait phones have swapped physical axes.
     const rotated = matchMedia('(orientation:portrait) and (pointer:coarse) and (max-width:750px)').matches;
     const nx = rotated ? (clientY-r.top)/r.height : (clientX-r.left)/r.width;
-    const ny = rotated ? 1-(clientX-r.left)/r.width : (clientY-r.top)/r.height;
+    const ny = rotated ? (r.right-clientX)/r.width : (clientY-r.top)/r.height;
     pointer.set(nx*2-1, 1-ny*2);
     raycaster.setFromCamera(pointer, camera);
     return raycaster.intersectObjects(slotObjects, false)[0]?.object?.userData || null;

@@ -2,6 +2,11 @@
 export function installMobileBoardControls({viewport, board, enabled = () => true}) {
   if (!viewport || !board) return () => {};
   const mobile = () => (matchMedia('(pointer:coarse) and (orientation:landscape)').matches || matchMedia('(pointer:coarse) and (orientation:portrait) and (max-width:750px)').matches);
+  // Translate physical screen coordinates to the page's unrotated layout axes.
+  const toLocal = (x,y) => {
+    const turned = matchMedia('(pointer:coarse) and (orientation:portrait) and (max-width:750px)').matches;
+    return turned ? {x:y,y:-x} : {x,y};
+  };
   let zoom = 1;
   const pointers = new Map();
   let drag = null;
@@ -11,7 +16,9 @@ export function installMobileBoardControls({viewport, board, enabled = () => tru
   const applyZoom = (next,cx,cy) => {
     next=clamp(next,.55,2.2);
     const rect=viewport.getBoundingClientRect();
-    const px=cx-rect.left, py=cy-rect.top;
+    const turned=matchMedia('(pointer:coarse) and (orientation:portrait) and (max-width:750px)').matches;
+    const px=turned ? cy-rect.top : cx-rect.left;
+    const py=turned ? rect.right-cx : cy-rect.top;
     const bx=(viewport.scrollLeft+px)/zoom, by=(viewport.scrollTop+py)/zoom;
     zoom=next;
     board.style.zoom=String(zoom);
@@ -44,7 +51,8 @@ export function installMobileBoardControls({viewport, board, enabled = () => tru
       applyZoom(pinch.zoom*d/pinch.distance,pinch.cx,pinch.cy);
       suppressClickUntil=performance.now()+450;
     } else if(drag){
-      const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+      const delta=toLocal(e.clientX-drag.x,e.clientY-drag.y);
+      const dx=delta.x,dy=delta.y;
       if(Math.hypot(dx,dy)>8)drag.moved=true;
       if(drag.moved){viewport.scrollLeft=drag.left-dx;viewport.scrollTop=drag.top-dy;suppressClickUntil=performance.now()+450;}
     }
@@ -62,6 +70,10 @@ export function installMobileBoardControls({viewport, board, enabled = () => tru
   const resize=()=>{
     if(!mobile()){board.style.zoom='';zoom=1;pointers.clear();drag=null;pinch=null;}
   };
+  const blockNativeGesture = (event) => { if (mobile() && enabled()) event.preventDefault(); };
+  viewport.addEventListener('touchmove',blockNativeGesture,{passive:false});
+  viewport.addEventListener('gesturestart',blockNativeGesture,{passive:false});
+  viewport.addEventListener('gesturechange',blockNativeGesture,{passive:false});
   viewport.addEventListener('pointerdown',onDown);
   viewport.addEventListener('pointermove',onMove);
   viewport.addEventListener('pointerup',onUp);
@@ -69,5 +81,5 @@ export function installMobileBoardControls({viewport, board, enabled = () => tru
   viewport.addEventListener('click',onClickCapture,true);
   window.addEventListener('resize',resize);
   resize();
-  return ()=>{viewport.removeEventListener('pointerdown',onDown);viewport.removeEventListener('pointermove',onMove);viewport.removeEventListener('pointerup',onUp);viewport.removeEventListener('pointercancel',onUp);viewport.removeEventListener('click',onClickCapture,true);window.removeEventListener('resize',resize);};
+  return ()=>{viewport.removeEventListener('touchmove',blockNativeGesture);viewport.removeEventListener('gesturestart',blockNativeGesture);viewport.removeEventListener('gesturechange',blockNativeGesture);viewport.removeEventListener('pointerdown',onDown);viewport.removeEventListener('pointermove',onMove);viewport.removeEventListener('pointerup',onUp);viewport.removeEventListener('pointercancel',onUp);viewport.removeEventListener('click',onClickCapture,true);window.removeEventListener('resize',resize);};
 }

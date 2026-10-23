@@ -531,3 +531,28 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   .board-scroll { height:calc(100dvw - 165px); }
   .card-detail-grid { grid-template-columns:1fr .9fr 1fr;gap:7px; }
 }
+
+/* v4.7.6: virtual landscape has the same right-hand tray as a physical landscape phone. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  body { padding-bottom:0!important; overscroll-behavior:none; }
+  .workarea { padding:3px!important; }
+  .board-scroll {height:calc(100dvw - 105px)!important;min-height:100px!important;touch-action:none;overscroll-behavior:contain;}
+  .build-dock:not([hidden]) {position:fixed!important;top:100px!important;bottom:5px!important;right:0!important;left:auto!important;width:clamp(160px,25dvh,235px)!important;max-width:42dvh!important;display:flex!important;flex-direction:column!important;border:1px solid #54879a!important;border-radius:12px 0 0 12px!important;padding:8px!important;z-index:40!important;box-shadow:-10px 0 35px #020b14c7!important;}
+  .build-dock .dock-upper{display:flex!important;flex-direction:column!important;align-items:stretch!important;overflow-y:auto;overflow-x:hidden;flex:0 0 auto;max-height:65%}
+  .build-dock .dock-upper .tabs{order:0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;width:100%!important;overflow:visible!important}
+  .build-dock .dock-upper .tabs .tab{white-space:normal!important;font-size:12px!important;padding:7px 1px!important;min-height:32px!important}
+  .build-dock .dock-upper .dock-belt{display:block!important;width:100%;margin:2px 0!important;padding:6px 2px!important;font-size:12px!important}
+  .build-dock .building-cards{display:flex!important;flex-direction:column!important;overflow-y:auto!important;flex:1!important;min-height:0!important;padding:4px 0 0!important}
+  .build-dock .build-card{width:100%!important;min-width:0!important;min-height:40px!important;padding:5px!important}
+  .build-dock #dockToggle{position:absolute!important;top:35%!important;left:-48px!important;width:48px!important;height:64px!important;margin:0!important;padding:0!important;border-radius:10px 0 0 10px!important;background:#255b70!important;border-color:#6ab5c0!important;color:#fff!important;font-size:0!important;z-index:42!important}
+  .build-dock #dockToggle::after{content:'❯';font-size:20px}
+  .build-dock.dock-collapsed{transform:translateX(calc(100% - 1px))!important;visibility:visible!important;pointer-events:none!important}
+  .build-dock.dock-collapsed #dockToggle{visibility:visible!important;pointer-events:auto!important}
+  .build-dock.dock-collapsed #dockToggle::after{content:'❮'}
+  .build-dock.dock-collapsed .dock-upper,.build-dock.dock-collapsed .building-cards{visibility:hidden!important}
+  .topbar{position:relative;z-index:50!important}
+  .ui-modal{max-height:calc(100dvw - 8px)!important}
+  .combat-three-container{height:clamp(200px,46dvw,330px)}
+}
+/* Prevent Safari native zoom or swipe navigation while touching the factory grid. */
+.board-scroll {touch-action:none;overscroll-behavior:contain;}
