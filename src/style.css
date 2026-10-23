@@ -653,22 +653,54 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 }
 
 
-/* v4.7.13: use the empty area under recipe selection for a compact preview summary. */
-.recipe-selection-summary{margin-top:10px;padding:10px;border:1px solid #406175;border-radius:12px;background:#132a3a}
-.recipe-selection-title{display:block;font-size:12px;letter-spacing:.08em;color:#9adfda;margin-bottom:8px}
-.recipe-selection-body{display:grid;grid-template-columns:minmax(86px,108px) minmax(0,1fr);gap:10px;align-items:center}
-.recipe-selection-product .fcg-card{width:100%;max-width:104px;margin-inline:auto}
-.recipe-selection-name{font-weight:700;font-size:14px;margin-bottom:8px;color:#eef8ff}
-.recipe-selection-materials{display:flex;flex-wrap:wrap;gap:6px}
-.recipe-selection-chip{padding:5px 8px;border:1px solid #4d6c82;border-radius:999px;background:#183243;font-size:11px;color:#d7e7f3}
-.recipe-selection-chip.ready{border-color:#6cd6ae;background:#1e4a44;color:#dffff2}
-.recipe-selection-chip.waiting{border-color:#8c6871;background:#402934;color:#ffe0e6}
-.recipe-selection-state{margin-top:8px;font-size:11px;color:#b7d7d8}
-@media (orientation:portrait) and (pointer:coarse) and (max-width:750px){
-  #gameViewport .recipe-card-grid{max-height:min(28dvh,230px)!important}
-  #gameViewport .recipe-selection-summary{margin-top:8px;padding:8px!important}
-  #gameViewport .recipe-selection-body{grid-template-columns:minmax(76px,92px) minmax(0,1fr)!important;gap:8px!important}
-  #gameViewport .recipe-selection-product .fcg-card{max-width:88px!important}
-  #gameViewport .recipe-selection-name{font-size:13px!important;margin-bottom:6px!important}
-  #gameViewport .recipe-selection-chip{font-size:10px!important;padding:4px 7px!important}
+/* v4.7.14: The recipe grid itself fills the height of the left panel.
+   Both columns share one fixed, scroll-safe modal viewport on rotated phones. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  #gameViewport .ui-modal.facility-detail-modal {
+    height:calc(100dvw - 10px)!important;
+    min-height:0!important;
+    max-height:calc(100dvw - 10px)!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+  }
+  #gameViewport .facility-detail-modal .modal-heading {flex:0 0 auto!important}
+  #gameViewport .facility-detail-modal .facility-layout {
+    flex:1 1 auto!important;
+    min-height:0!important;
+    height:100%!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+  #gameViewport .facility-detail-modal .facility-left {
+    display:flex!important;
+    flex-direction:column!important;
+    height:100%!important;
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  #gameViewport .facility-detail-modal .facility-tabs {flex:0 0 auto!important}
+  #gameViewport .facility-detail-modal .facility-content {
+    display:flex!important;
+    flex-direction:column!important;
+    flex:1 1 auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+  #gameViewport .facility-detail-modal .recipe-auto-switch {flex:0 0 auto!important}
+  #gameViewport .facility-detail-modal .recipe-card-grid {
+    max-height:none!important;
+    flex:1 1 auto!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+    align-content:start!important;
+    grid-auto-rows:max-content!important;
+  }
+  #gameViewport .facility-detail-modal .facility-right {
+    height:100%!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+  }
 }
