@@ -505,39 +505,32 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
  .combat-mode-toggle{padding:6px 9px;font-size:12px}
 }
 
-/* v4.7.5: portrait phones display the entire game in a landscape coordinate plane.
-   The OS orientation is unchanged; users hold the phone horizontally. */
-@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
-  html { overflow:hidden; width:100%; height:100%; }
-  body {
-    position:fixed; left:0; top:0; margin:0; overflow:auto;
-    width:100dvh; height:100dvw; min-height:0;
-    transform-origin:top left; transform:translateX(100dvw) rotate(90deg);
-    overscroll-behavior:contain;
-  }
-  #portraitHint { display:none!important; }
-  .combat-three-container { height:clamp(200px,46dvw,330px); }
-  .topbar { min-height:50px; padding:4px 8px; }
-  .main-menu { position:fixed; inset:0; width:100%;height:100%; }
-  .menu-header { min-height:51px; padding:6px 15px; }
-  .menu-main { grid-template-columns:165px minmax(0,1fr) 50px; }
-  .menu-nav { padding:8px; gap:5px; }
-  .menu-nav-btn { min-height:40px; padding:5px 9px; font-size:12px; }
-  .menu-center { padding:8px 14px; }
-  .menu-center h1 { font-size:25px;margin:3px 0; }
-  .menu-content { gap:8px;grid-template-columns:minmax(150px,.8fr) minmax(180px,1fr); }
-  .menu-choice { min-height:44px;padding:7px 25px 7px 10px; }
-  .menu-detail { min-height:130px;padding:10px; }
-  .board-scroll { height:calc(100dvw - 165px); }
-  .card-detail-grid { grid-template-columns:1fr .9fr 1fr;gap:7px; }
-}
 
-/* v4.7.6: virtual landscape has the same right-hand tray as a physical landscape phone. */
+/* v4.7.8: One rotated landscape viewport. All fixed panels share its axes. */
+#gameViewport { min-height:100dvh; }
 @media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
-  body { padding-bottom:0!important; overscroll-behavior:none; }
-  .workarea { padding:3px!important; }
-  .board-scroll {height:calc(100dvw - 105px)!important;min-height:100px!important;touch-action:none;overscroll-behavior:contain;}
-  .build-dock:not([hidden]) {position:fixed!important;top:100px!important;bottom:5px!important;right:0!important;left:auto!important;width:clamp(160px,25dvh,235px)!important;max-width:42dvh!important;display:flex!important;flex-direction:column!important;border:1px solid #54879a!important;border-radius:12px 0 0 12px!important;padding:8px!important;z-index:40!important;box-shadow:-10px 0 35px #020b14c7!important;}
+  html,body { width:100%; height:100%; overflow:hidden; padding:0!important; margin:0; }
+  #gameViewport {
+    position:absolute; top:0; left:100dvw;
+    width:100dvh; height:100dvw; min-height:0;
+    transform-origin:top left; transform:rotate(90deg);
+    overflow:auto; overscroll-behavior:contain;
+    isolation:isolate;
+  }
+  #portraitHint {display:none!important}
+  .topbar{min-height:50px;padding:4px 8px;position:relative;z-index:50}
+  .workarea{padding:3px!important}
+  .board-scroll{height:calc(100dvw - 105px)!important;min-height:100px!important;touch-action:none;overscroll-behavior:contain}
+  .combat-three-container{height:clamp(200px,46dvw,330px)}
+  .build-dock:not([hidden]){
+    position:fixed!important;top:100px!important;bottom:5px!important;
+    left:auto!important;right:0!important;
+    width:clamp(160px,25dvh,235px)!important;max-width:42dvh!important;
+    height:auto!important;display:flex!important;flex-direction:column!important;
+    border:1px solid #54879a!important;border-right:0!important;
+    border-radius:12px 0 0 12px!important;padding:8px!important;
+    box-shadow:-10px 0 35px #020b14c7!important;z-index:40!important;
+  }
   .build-dock .dock-upper{display:flex!important;flex-direction:column!important;align-items:stretch!important;overflow-y:auto;overflow-x:hidden;flex:0 0 auto;max-height:65%}
   .build-dock .dock-upper .tabs{order:0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;width:100%!important;overflow:visible!important}
   .build-dock .dock-upper .tabs .tab{white-space:normal!important;font-size:12px!important;padding:7px 1px!important;min-height:32px!important}
@@ -550,42 +543,16 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   .build-dock.dock-collapsed #dockToggle{visibility:visible!important;pointer-events:auto!important}
   .build-dock.dock-collapsed #dockToggle::after{content:'❮'}
   .build-dock.dock-collapsed .dock-upper,.build-dock.dock-collapsed .building-cards{visibility:hidden!important}
-  .topbar{position:relative;z-index:50!important}
   .ui-modal{max-height:calc(100dvw - 8px)!important}
-  .combat-three-container{height:clamp(200px,46dvw,330px)}
-}
-/* Prevent Safari native zoom or swipe navigation while touching the factory grid. */
-.board-scroll {touch-action:none;overscroll-behavior:contain;}
-
-/* v4.7.7: anchor the builder to the unrotated game body, not Safari's
-   visual viewport. iOS may resolve position:fixed against the wrong axis
-   inside a transformed element. The body is our landscape containing block. */
-@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
-  body { position:fixed!important; width:100dvh!important; height:100dvw!important; }
-  .build-dock:not([hidden]) {
-    position:absolute!important;
-    left:auto!important;
-    right:0!important;
-    top:64px!important;
-    bottom:5px!important;
-    width:clamp(170px,27dvh,220px)!important;
-    max-width:34%!important;
-    height:auto!important;
-    max-height:none!important;
-    transform:none;
-  }
-  .build-dock .dock-upper {
-    flex:0 0 auto!important;
-    max-height:58%!important;
-    min-height:0!important;
-    overflow-y:auto!important;
-  }
-  .build-dock .building-cards { min-height:0!important; overflow-y:auto!important; }
-  .build-dock.dock-collapsed {
-    transform:translateX(calc(100% - 1px))!important;
-  }
-  .build-dock.dock-collapsed #dockToggle {
-    visibility:visible!important;
-    pointer-events:auto!important;
-  }
+  .main-menu{position:fixed;inset:0;width:100%;height:100%}
+  .menu-header{min-height:51px;padding:6px 15px}
+  .menu-main{grid-template-columns:165px minmax(0,1fr) 50px}
+  .menu-nav{padding:8px;gap:5px}
+  .menu-nav-btn{min-height:40px;padding:5px 9px;font-size:12px}
+  .menu-center{padding:8px 14px}
+  .menu-center h1{font-size:25px;margin:3px 0}
+  .menu-content{gap:8px;grid-template-columns:minmax(150px,.8fr) minmax(180px,1fr)}
+  .menu-choice{min-height:44px;padding:7px 25px 7px 10px}
+  .menu-detail{min-height:130px;padding:10px}
+  .card-detail-grid{grid-template-columns:1fr .9fr 1fr;gap:7px}
 }
