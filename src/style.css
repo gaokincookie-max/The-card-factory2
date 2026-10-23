@@ -616,3 +616,38 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   #gameViewport .online-connect-dialog {width:100%!important;height:100%!important;max-height:100%!important;}
   #gameViewport .combat-confirm-overlay:not([hidden]) {inset:0!important;}
 }
+
+
+/* v4.7.12: Use more horizontal space for smartphone detail panels. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  #gameViewport .ui-overlay {
+    padding:4px!important;
+  }
+  #gameViewport .ui-modal {
+    width:min(calc(100dvh - 8px), 1280px)!important;
+    max-width:calc(100dvh - 8px)!important;
+    max-height:calc(100dvw - 10px)!important;
+    padding:12px!important;
+    border-radius:16px!important;
+  }
+  #gameViewport .facility-layout {
+    grid-template-columns:minmax(0,1.12fr) minmax(250px,0.88fr)!important;
+    gap:10px!important;
+  }
+  #gameViewport .facility-left,
+  #gameViewport .facility-right {
+    padding:8px!important;
+  }
+  #gameViewport .facility-content {
+    max-height:calc(100dvw - 170px)!important;
+  }
+  #gameViewport .card-detail-overlay {
+    padding:4px!important;
+  }
+  #gameViewport .card-detail-panel {
+    width:min(calc(100dvh - 8px), 1220px)!important;
+    max-width:calc(100dvh - 8px)!important;
+    max-height:calc(100dvw - 10px)!important;
+    padding:12px!important;
+  }
+}
