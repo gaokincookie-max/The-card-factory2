@@ -43,3 +43,29 @@
 .menu-new-content{flex:1 1 auto;overflow-y:auto;align-items:flex-start;align-content:flex-start}
 .menu-new-content:has(.library-body){display:flex;flex-direction:column;flex-wrap:nowrap;overflow:hidden}
 .library-body{overflow:auto;flex:1 1 auto}
+
+/* v4.7.17 – miniature factory walkthrough, sharing the real board tile styling */
+.factory-demo{display:flex;flex-direction:column;gap:8px;margin:12px 0;padding:10px;border:1px solid #416f82;border-radius:12px;background:#0b1b2b;max-width:100%;overflow:hidden}
+.factory-demo-screen{background:radial-gradient(circle at center,#14354a,#081724);border:1px solid #315066;border-radius:9px;overflow:hidden;padding:12px 6px;display:flex;justify-content:center}
+.factory-demo-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));width:min(100%,468px);gap:2px;aspect-ratio:9/5}
+.factory-demo-grid .factory-demo-tile{width:100%;height:auto;min-width:0;min-height:0;aspect-ratio:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:clamp(9px,1.4vw,14px);border:1px solid #315167;border-radius:2px;padding:0;pointer-events:none}
+.factory-demo-grid .factory-demo-tile.factory-demo-origin{border:2px solid #87cfd2;font-weight:800;color:#fff3dd;box-shadow:inset 0 0 7px #09131d}
+.factory-demo-grid .factory-demo-tile.zone{font-weight:800}
+.factory-demo-grid .factory-demo-tile.belt{background:#705c3a;color:#f7deb0}
+.factory-demo-cargo{position:absolute;z-index:2;color:#ffe5a1;font-size:18px;text-shadow:0 0 4px #fff}
+.factory-demo-playing .factory-demo-cargo-left{animation:guide-cargo-left 2s linear infinite}
+.factory-demo-playing .factory-demo-cargo-in{animation:guide-cargo-in 2s linear infinite}
+.factory-demo-playing .factory-demo-cargo-out{animation:guide-cargo-out 2s linear infinite}
+@keyframes guide-cargo-left{from{transform:translateX(55px)}to{transform:translateX(-100px)}}
+@keyframes guide-cargo-in{from{transform:translateX(55px)}to{transform:translateX(-110px)}}
+@keyframes guide-cargo-out{from{transform:translateX(55px)}to{transform:translateX(-105px)}}
+.factory-demo-explanation{display:flex;gap:10px;align-items:center;font-size:12px;color:#d3ecf4;min-height:25px}
+.factory-demo-count{background:#21556a;border-radius:6px;padding:3px 8px;white-space:nowrap;color:#c5f4e9}
+.factory-demo-step{line-height:1.35}
+.factory-demo-controls{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.factory-demo-controls button{font-size:11px;padding:6px 12px;min-height:32px}
+@media(orientation:portrait) and (pointer:coarse) and (max-width:750px){#gameViewport .factory-demo{padding:6px;gap:5px}#gameViewport .factory-demo-screen{padding:5px}#gameViewport .factory-demo-grid{width:min(100%,380px)}#gameViewport .factory-demo-controls button{padding:4px 8px;min-height:27px}#gameViewport .factory-demo-grid .factory-demo-tile{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.factory-demo-playing .factory-demo-cargo{animation:none}}
+/* Allow conveyor items to travel across adjacent tiles, clipped by the board. */
+.factory-demo-grid{overflow:hidden;position:relative}
+.factory-demo-grid .factory-demo-tile{overflow:visible}

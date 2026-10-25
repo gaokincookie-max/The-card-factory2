@@ -5,7 +5,8 @@ import {FACILITY_GROUPS,makeFacilityGuide,makeFacilityIndex} from './facility-gu
 const ITEMS={battle:['戦う','⚔'],factory:['恒常工場','▦'],library:['データベース','▤'],missions:['ミッション','▣']};
 const mk=(tag,cls='',label='')=>{const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=label;return e};
 const button=(label,cls,fn)=>{const e=mk('button',cls,label);e.type='button';e.onclick=fn;return e};
-const cardNames=()=>[...new Set([...Object.values(catalog).filter(c=>c.resource).map(c=>c.resource),...Object.values(recipes).flat().map(r=>r.name),...Object.values(recipes).flat().flatMap(r=>Object.keys(r.input||{}))])].sort((a,b)=>a.localeCompare(b,'ja'));
+const CARD_ORDER={unit:0,support:1,recon:1,material:2};
+const cardNames=()=>[...new Set([...Object.values(catalog).filter(c=>c.resource).map(c=>c.resource),...Object.values(recipes).flat().map(r=>r.name),...Object.values(recipes).flat().flatMap(r=>Object.keys(r.input||{}))])].sort((a,b)=>(CARD_ORDER[cardKind(a)]??3)-(CARD_ORDER[cardKind(b)]??3)||a.localeCompare(b,'ja'));
 export function mountMainMenu({openBattle,openFactory,openOnline}){
  const root=document.getElementById('mainMenu');let section=null,step=null,settings=false,friend=false,libraryTab='cards',facilityKind=null,search='',filter='all';
  const scene=mk('div','menu-scene');scene.setAttribute('aria-hidden','true');scene.innerHTML='<div class="menu-scene-glow"></div><div class="menu-factory-view"><div class="menu-machine m1"><i>▦</i><small>SMELTER</small></div><div class="menu-track t1"></div><div class="menu-machine m2"><i>⚙</i><small>ASSEMBLY</small></div><div class="menu-track t2"></div><div class="menu-machine m3"><i>▣</i><small>WAREHOUSE</small></div><div class="menu-track t3"></div><div class="menu-machine m4"><i>◇</i><small>LOGISTICS</small></div><span class="scene-caption">INDUSTRIAL FACTORY · PROTOTYPE</span></div>';
