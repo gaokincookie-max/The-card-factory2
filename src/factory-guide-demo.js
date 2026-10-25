@@ -4,7 +4,6 @@
  * with the main factory. This renderer does not run or mutate a match.
  */
 import {catalog} from './facility-catalog.js';
-import {recipes} from './engine.js';
 
 const W=13,H=9;
 const node=(tag,cls,text='')=>{const n=document.createElement(tag);n.className=cls;if(text)n.textContent=text;return n};
@@ -33,13 +32,16 @@ export function makeFactoryGuideDemo(kind){
  const explanation=node('div','factory-demo-explanation'),counter=node('span','factory-demo-count'),headline=node('strong','factory-demo-step');explanation.append(counter,headline);
  const controls=node('div','factory-demo-controls'),restart=node('button','','↺ 最初から'),back=node('button','','‹'),pause=node('button','','Ⅱ 一時停止'),next=node('button','','›');
  back.setAttribute('aria-label','前の手順');next.setAttribute('aria-label','次の手順');controls.append(restart,back,pause,next);root.append(screen,explanation,controls);
- // Reserve enough room for 3 independent inputs on large factories.
+ // Layout rules are based on facility footprint so the guide visually matches the factory.
  const x=Math.floor((W-w)/2),y=Math.floor((H-h)/2);
- const lines= mode==='factory'?Math.min(3,Math.max(2,Math.max(...(recipes[kind]||[]).map(r=>Object.keys(r.input||{}).length),2))):mode==='store'?Math.min(3,h+1):1;
- const inputYs=Array.from({length:lines},(_,i)=>Math.max(0,Math.min(H-1,Math.round(y+(h-1)*(i+.5)/lines))));
- // For three-input production demos, use separate incoming rows, even on 3x2 factories.
- if(lines===3){inputYs[0]=y-1;inputYs[1]=y;inputYs[2]=y+h-1}
  const outY=y+Math.floor(h/2);
+ const inputYs = mode==='factory'
+  ? Array.from({length:h},(_,i)=>y+i)
+  : [outY];
+ const topInputX = x + Math.floor(w/2);
+ const bottomInputX = topInputX;
+ const topInputEndY = y-1;
+ const bottomInputStartY = y+h;
  let outline=null,resizeObserver=null;
  function cell(cx,cy,cls,label=''){if(cx<0||cy<0||cx>=W||cy>=H)return;const c=tiles[key(cx,cy)];c.classList.add(...cls.split(' '));if(label)c.textContent=label;return c}
  function belt(cx,cy,arrow){cell(cx,cy,'belt',arrow)}
@@ -70,15 +72,40 @@ export function makeFactoryGuideDemo(kind){
    if(stage>=1)for(let j=0;j<h;j++)for(let i=0;i<w;i++)cell(x+i,y+j,`occupied ${kind}`);
    if(stage>=2)for(let i=x-1;i>=0;i--)belt(i,y,'←');
    if(stage>=3)item(x-1-frame%(x),y,spec.resource);
+  }else if(mode==='store'){
+   for(let j=0;j<h;j++)for(let i=0;i<w;i++)cell(x+i,y+j,`occupied ${kind}`);
+   if(stage>=1){
+    // single output to the left
+    for(let i=0;i<x;i++)belt(i,outY,'←');
+    // input from the right
+    for(let i=x+w;i<W;i++)belt(i,outY,'←');
+    // input from the top and bottom into the center column of the warehouse
+    for(let cy=0; cy<=topInputEndY; cy++) belt(topInputX, cy, '↓');
+    for(let cy=bottomInputStartY; cy<H; cy++) belt(bottomInputX, cy, '↑');
+   }
+   if(stage>=2){
+    if(stage===2){
+      const rightSpan = Math.max(1, W-(x+w));
+      item((x+w) + ((rightSpan-1 - (frame%rightSpan))), outY, '搬入カード 1');
+      if(topInputEndY>=0) item(topInputX, frame % (topInputEndY+1), '搬入カード 2');
+      if(bottomInputStartY < H) item(bottomInputX, (H-1) - (frame % Math.max(1, H-bottomInputStartY)), '搬入カード 3');
+    } else {
+      item(Math.max(0, x-1-(frame%Math.max(1,x))), outY, '出荷カード');
+    }
+   }
   }else{
    for(let j=0;j<h;j++)for(let i=0;i<w;i++)cell(x+i,y+j,`occupied ${kind}`);
    if(stage>=1){
     for(let i=0;i<x;i++)belt(i,outY,'←');
-    for(const iy of inputYs)for(let i=x+w;i<W;i++)belt(i,iy,'←');
+    const laneYs = mode==='factory' ? inputYs : [outY];
+    for(const iy of laneYs)for(let i=x+w;i<W;i++)belt(i,iy,'←');
    }
    if(stage>=2){
-    if(stage===2){inputYs.forEach((iy,i)=>item(W-1-((frame+i*2)%(W-x-w)),iy,`素材 ${i+1}`))}
-    else {item(x-1-(frame%x),outY,mode==='factory'?'製造カード':mode==='boost'?'強化済みカード':'完成品')}
+    if(stage===2){
+      const laneYs = mode==='factory' ? inputYs : [outY];
+      laneYs.forEach((iy,i)=>item(W-1-((frame+i*2)%Math.max(1,W-x-w)),iy,`素材 ${i+1}`));
+    }
+    else {item(Math.max(0, x-1-(frame%Math.max(1,x))),outY,mode==='factory'?'製造カード':mode==='boost'?'強化済みカード':'完成品')}
    }
   }
   if(stage>=1||mode!=='gather')makeOutline();

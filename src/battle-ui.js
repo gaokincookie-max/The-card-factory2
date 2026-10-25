@@ -4,7 +4,7 @@ import {makeCard,openCardDetail} from './card-ui.js';
 import {recipes,itemName,warehouseStock,catalog} from './engine.js';
 import {isUnit,localBattleCommand} from './battle.js';
 import {battleArtUrl} from './battle-art.js';
-import {createBattle3D} from './battle-3d.js?v=4.7.20';
+import {createBattle3D} from './battle-3d.js?v=4.7.21';
 export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>0){
  // All player-originated mutations go through the shared command boundary.
  // A legacy-compatible local adapter is kept for isolated UI tests.
