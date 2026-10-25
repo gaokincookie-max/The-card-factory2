@@ -1,6 +1,6 @@
 {
   "name": "factory-card-game",
-  "version": "4.7.19",
+  "version": "4.7.20",
   "type": "module",
   "private": true,
   "scripts": {

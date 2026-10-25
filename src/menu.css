@@ -80,3 +80,7 @@
 .factory-demo-grid .factory-demo-facility-outline{position:absolute;z-index:4;pointer-events:none;outline:2px solid #c9d8e6;outline-offset:-2px}
 .factory-demo-grid .factory-demo-facility-outline .direction-marker{font-size:clamp(10px,1.4vw,16px);min-width:19px;min-height:18px;padding:1px 3px;border-width:1px;z-index:6}
 .factory-demo-grid{isolation:isolate;gap:1px}
+
+/* v4.7.20: realistic 13×9 grid, with outlines snapped after layout. */
+.factory-demo-grid{grid-template-columns:repeat(13,minmax(0,1fr));width:min(100%,572px);aspect-ratio:13 / 9;gap:1px}
+@media(orientation:portrait) and (pointer:coarse) and (max-width:750px){#gameViewport .factory-demo-grid{width:min(100%,520px)}}
