@@ -37,10 +37,15 @@ export function makeFactoryGuideDemo(kind){
  controls.append(restart,back,pause,next);root.append(screen,explanation,controls);
  function tile(x,y,cls,text=''){const c=tiles[at(x,y)];if(!c)return;c.classList.add(...cls.split(' '));if(text)c.textContent=text;return c}
  function edgeMarkers(x,y,w,h,miner){
-  // These are the same marker classes and four-direction layout as the game.
+  // Use the actual tile DOM positions so the outline stays snapped to the grid,
+  // including tile gaps/borders, instead of relying on rough percentages.
+  const start=tiles[at(x,y)], end=tiles[at(x+w-1,y+h-1)];
+  if(!start||!end)return;
   const e=node('div','facility-direction-overlay factory-demo-facility-outline');
-  e.style.left=`${100*x/WIDTH}%`;e.style.top=`${100*y/HEIGHT}%`;
-  e.style.width=`${100*w/WIDTH}%`;e.style.height=`${100*h/HEIGHT}%`;
+  const left=start.offsetLeft, top=start.offsetTop;
+  const right=end.offsetLeft+end.offsetWidth, bottom=end.offsetTop+end.offsetHeight;
+  e.style.left=`${left}px`;e.style.top=`${top}px`;
+  e.style.width=`${right-left}px`;e.style.height=`${bottom-top}px`;
   for(const side of ['top','right','bottom','left']){
    const type=miner?'out':side==='left'?'out':side==='right'?'in':null;
    if(!type)continue;
