@@ -69,3 +69,14 @@
 /* Allow conveyor items to travel across adjacent tiles, clipped by the board. */
 .factory-demo-grid{overflow:hidden;position:relative}
 .factory-demo-grid .factory-demo-tile{overflow:visible}
+
+/* v4.7.18: miniature uses the live board's exact building/belt cell classes.
+   A facility is shown as occupied tiles plus the production direction overlay,
+   not a custom icon. Cargo moves cell-by-cell just as the factory's ● glyph. */
+.factory-demo-grid .factory-demo-tile{border:0;border-radius:0;box-shadow:none;overflow:hidden;font-size:clamp(13px,1.6vw,20px)}
+.factory-demo-grid .factory-demo-tile.occupied{font-size:0!important}
+.factory-demo-grid .factory-demo-tile.belt{background:#b3782f!important;color:#fff!important;box-shadow:inset 0 0 0 2px #ffca72;font-size:clamp(18px,2vw,25px)!important;font-weight:900}
+.factory-demo-grid .factory-demo-tile.factory-demo-loaded{color:#fff9cd!important;text-shadow:0 0 5px #f5df88}
+.factory-demo-grid .factory-demo-facility-outline{position:absolute;z-index:4;pointer-events:none;outline:2px solid #c9d8e6;outline-offset:-2px}
+.factory-demo-grid .factory-demo-facility-outline .direction-marker{font-size:clamp(10px,1.4vw,16px);min-width:19px;min-height:18px;padding:1px 3px;border-width:1px;z-index:6}
+.factory-demo-grid{isolation:isolate;gap:1px}
