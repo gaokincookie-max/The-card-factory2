@@ -106,3 +106,48 @@
  #gameViewport .menu-shell-v3 .menu-guide-focus .factory-demo-screen{padding:2px}
  #gameViewport .menu-shell-v3 .menu-guide-focus .factory-demo-grid{width:min(100%,465px)}
 }
+
+/* v4.7.23: The whole database page scrolls as one document. Previously only
+   .library-body scrolled, pinning its heading and tabs over the guide demo. */
+.menu-shell-v3 .menu-sub-mode:not(.menu-guide-focus) .menu-center:has(.library-tabs),
+.menu-shell-v3 .menu-guide-focus .menu-center{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.menu-shell-v3 .menu-sub-mode .menu-center:has(.library-tabs) .menu-new-content{
+  flex:0 0 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:visible!important;
+  display:flex!important;
+  flex-direction:column!important;
+  flex-wrap:nowrap!important;
+}
+.menu-shell-v3 .menu-sub-mode .menu-center:has(.library-tabs) .library-body{
+  flex:0 0 auto!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+/* A selected facility needs only the guide content and its own back action. */
+.menu-shell-v3 .menu-guide-focus .menu-center>.menu-eyebrow,
+.menu-shell-v3 .menu-guide-focus .menu-center>h1,
+.menu-shell-v3 .menu-guide-focus .library-tabs{display:none!important}
+.menu-shell-v3 .menu-guide-focus .menu-center{
+  padding:6px 12px 12px!important;
+}
+.menu-shell-v3 .menu-guide-focus .menu-center .menu-new-content{
+  overflow:visible!important;
+  flex:0 0 auto!important;
+  height:auto!important;
+}
+.menu-shell-v3 .menu-guide-focus .library-body{overflow:visible!important;flex:0 0 auto!important;height:auto!important}
+@media(orientation:portrait) and (pointer:coarse) and (max-width:750px){
+  #gameViewport .menu-shell-v3 .menu-sub-mode .menu-center:has(.library-tabs){
+    padding-top:52px!important;
+    padding-bottom:10px!important;
+  }
+  #gameViewport .menu-shell-v3 .menu-guide-focus .menu-center{padding:4px 7px 12px!important}
+}
