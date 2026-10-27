@@ -704,3 +704,22 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
     overflow-y:auto!important;
   }
 }
+
+/* Guided training, lightweight overlay over the real factory & combat views. */
+#trainingOverlay{position:absolute;z-index:120;top:60px;left:50%;transform:translateX(-50%);width:min(460px,65%);max-height:30vh;overflow:auto;background:#102a3bea;color:#eaf6ff;border:2px solid #78c5ba;border-radius:12px;box-shadow:0 6px 22px #0009;padding:9px 12px;font-size:12px;pointer-events:auto}
+#trainingOverlay[hidden]{display:none!important}
+.training-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
+.training-head button,.training-actions button{min-height:26px;font-size:11px;padding:3px 8px}
+#trainingDescription{margin:5px 0 7px;line-height:1.4}
+.training-actions{display:flex;gap:8px;justify-content:flex-end}
+.training-glow{outline:3px solid #86ffd3!important;outline-offset:3px;box-shadow:0 0 18px #4affa7!important;animation:training-pulse 1.3s ease-in-out infinite}
+@keyframes training-pulse{50%{filter:brightness(1.4)}}
+@media(max-height:550px){#trainingOverlay{top:5px;left:50%;width:min(540px,70%);max-height:32vh;font-size:11px;padding:5px 9px}}
+
+/* v4.7.25: non-blocking optional placement suggestions and detailed steps */
+#trainingSteps{margin:5px 0 7px 17px;padding:0;line-height:1.5;font-size:11px;color:#d1e8ed}
+#trainingSteps li{margin-bottom:2px}
+.training-ghost-layer{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:visible}
+.training-ghost{position:absolute;box-sizing:border-box;border:2px dashed #83efd1;background:#5ce7ba30;border-radius:3px;display:flex;align-items:center;justify-content:center;text-align:center;color:#eafff6;font-size:11px;font-weight:800;text-shadow:0 1px 3px #061727;pointer-events:none}
+.training-ghost-belt{border-color:#ffd08a;background:#f0af4f24;color:#ffe0ae}
+@media(max-height:550px){#trainingOverlay{max-height:40vh}#trainingSteps{font-size:10px}}

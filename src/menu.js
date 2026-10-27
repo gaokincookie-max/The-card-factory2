@@ -7,7 +7,7 @@ const mk=(tag,cls='',label='')=>{const e=document.createElement(tag);if(cls)e.cl
 const button=(label,cls,fn)=>{const e=mk('button',cls,label);e.type='button';e.onclick=fn;return e};
 const CARD_ORDER={unit:0,support:1,recon:1,material:2};
 const cardNames=()=>[...new Set([...Object.values(catalog).filter(c=>c.resource).map(c=>c.resource),...Object.values(recipes).flat().map(r=>r.name),...Object.values(recipes).flat().flatMap(r=>Object.keys(r.input||{}))])].sort((a,b)=>(CARD_ORDER[cardKind(a)]??3)-(CARD_ORDER[cardKind(b)]??3)||a.localeCompare(b,'ja'));
-export function mountMainMenu({openBattle,openFactory,openOnline}){
+export function mountMainMenu({openBattle,openFactory,openOnline,openTutorial}){
  const root=document.getElementById('mainMenu');let section=null,step=null,settings=false,friend=false,libraryTab='cards',facilityKind=null,search='',filter='all';
  const scene=mk('div','menu-scene');scene.setAttribute('aria-hidden','true');scene.innerHTML='<div class="menu-scene-glow"></div><div class="menu-factory-view"><div class="menu-machine m1"><i>▦</i><small>SMELTER</small></div><div class="menu-track t1"></div><div class="menu-machine m2"><i>⚙</i><small>ASSEMBLY</small></div><div class="menu-track t2"></div><div class="menu-machine m3"><i>▣</i><small>WAREHOUSE</small></div><div class="menu-track t3"></div><div class="menu-machine m4"><i>◇</i><small>LOGISTICS</small></div><span class="scene-caption">INDUSTRIAL FACTORY · PROTOTYPE</span></div>';
  const shell=mk('div','menu-shell menu-shell-v3');root.replaceChildren(scene,shell);const header=mk('header','menu-header');header.innerHTML='<div class="menu-logo"><span class="menu-logo-symbol">▥</span><div><strong>FACTORY <em>CARD GAME</em></strong><small>INDUSTRIAL COMMAND</small></div></div><div class="menu-header-right"><span class="menu-dev-label">DEVELOPMENT BUILD</span><button type="button" id="menuSettings" class="menu-icon-btn" aria-label="設定">⚙</button></div>';const body=mk('main','menu-main menu-main-v3'),nav=mk('nav','menu-nav'),panel=mk('section','menu-center'),right=mk('aside','menu-right');body.append(nav,panel,right);shell.append(header,body,mk('footer','menu-footer','EARLY ACCESS PROTOTYPE   •   PC / MOBILE LANDSCAPE'));
@@ -26,7 +26,7 @@ export function mountMainMenu({openBattle,openFactory,openOnline}){
  if(section==='battle'){
   if(!step){content.append(action('オンライン','他のプレイヤーと対戦',()=>{step='online';render()}),action('オフライン','CPU対戦・チュートリアル',()=>{step='offline';render()}));return}
   if(step==='online'){content.append(action('フレンド対戦','ルーム番号で友達と接続',()=>{close(false);openOnline?.()}),action('ランダムマッチ','今後実装予定',()=>{} ,{disabled:true}));return}
-  content.append(action('CPU対戦','現在の試作対戦画面を開く',()=>{close();openBattle?.()}),action('チュートリアル','今後実装予定',()=>{},{disabled:true}));return}
+  content.append(action('CPU対戦','現在の試作対戦画面を開く',()=>{close();openBattle?.()}),action('チュートリアル','採集から出荷・戦闘・回復までの連続演習',()=>{close(false);openTutorial?.()}));return}
  if(section==='library'){
   const tabs=mk('div','library-tabs');tabs.append(button('カード一覧','library-tab'+(libraryTab==='cards'?' active':''),()=>{libraryTab='cards';facilityKind=null;render()}),button('施設一覧','library-tab'+(libraryTab==='facilities'?' active':''),()=>{libraryTab='facilities';facilityKind=null;render()}));content.append(tabs);
   const area=mk('div','library-body');content.append(area);
