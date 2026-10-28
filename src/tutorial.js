@@ -19,21 +19,28 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   [
    ['ようこそ、工場演習へ。まず軽装歩兵を製造します。','next'],
    ['工場と出荷ラインは設置済みです。鉄鉱石だけ供給しましょう。','next'],
+   ['施設やベルトを建てるには、建築資材を使います。','next','#money'],
+   ['演習では練習用に建築資材を多めに用意しました。通常対戦では資材を計画的に使いましょう。','next','#money'],
    ['「採集」タブを押してください。','tab:gather','.tab[data-category="gather"]'],
    ['「鉄鉱石採集」を選んでください。','select:iron','#buildingCards button'],
    ['鉄鉱石ゾーンを押し、施設を仮配置しましょう。','pending:iron','#board'],
-   ['仮配置した施設は「↻」で回転できます。採集施設はそのままで構いません。','next','#floatingActions'],
+   ['仮配置中は回転ボタンで向きを変えられます。採集施設はそのままで構いません。','next'],
    ['問題なければ「✓」で設置を確定しましょう。','placed:iron','#floatingActions'],
+   ['施設を建てただけでは、鉄鉱石は工場に届きません。','next'],
+   ['工場へ運ぶために、ベルトコンベアを敷きましょう。','next'],
    ['次に「ベルト敷設」を押してください。','beltmode','#belts'],
    ['まず採集施設の出口側にあるマスをタップし、ベルトの始点を決めましょう。','beltstart','#board'],
    ['同じ行または列の終点をタップすると、ベルトをまとめて敷けます。','beltdone','#board'],
-   ['矢印が工場の入口へ向いているか確認しましょう。','next','#board'],
+   ['ベルトの矢印は素材の流れる方向です。工場の入口へ向いているか確認しましょう。','next'],
+   ['手札は最大8枚です。不要なカードを作り続けると満杯になるので注意しましょう。','next'],
    ['軽装歩兵が出荷されると自動的に次へ進みます。','ship'],
   ],
   [
    ['次は素材の加工です。まず「加工」タブを押しましょう。','tab:process','.tab[data-category="process"]'],
    ['「加工炉」を選び、工場の近くに仮配置しましょう。','select:smelter','#buildingCards button'],
-   ['空いたマスに加工炉を置き「✓」で確定します。','placed:smelter','#floatingActions'],
+   ['加工炉には入口と出口があります。青い矢印が入口、橙色が出口です。','next'],
+   ['向きが違う場合は仮配置中に回転できます。ベルトがつながる向きを選びましょう。','next'],
+   ['空いたマスに加工炉を置き「✓」で確定します。','placed:smelter'],
    ['加工炉へ鉄鉱石を運ぶベルトをつなぎましょう。','next','#belts'],
    ['加工炉を押すとレシピを選べます。「装甲板」に設定しましょう。','next','#modalPanel'],
    ['装甲板が実際に作られるまで待ちましょう。','material:装甲板'],
@@ -42,7 +49,8 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['重装歩兵には装甲板と火薬が必要です。','next'],
    ['化学資源ゾーンに採集施設を設置しましょう。','placed:chem','.tab[data-category="gather"]'],
    ['別の加工炉を設置して化学資源を搬入します。','next','.tab[data-category="process"]'],
-   ['レシピを「火薬」に変更しましょう。','next','#modalPanel'],
+   ['同じ原料からでも、加工炉のレシピによって異なる素材を作れます。','next'],
+   ['レシピを「火薬」に変更しましょう。','next'],
    ['装甲板と火薬を歩兵工場へ届けましょう。','next','#belts'],
    ['歩兵工場のレシピを「重装歩兵」に切り替えます。','next','#modalPanel'],
    ['重装歩兵が出荷されれば成功です。','ship'],
@@ -54,7 +62,9 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   ],
   [
    ['味方が負傷しました。戦闘だけを止め、工場に戻ります。','next'],
-   ['化学資源から薬剤を加工しましょう。','next','.tab[data-category="process"]'],
+   ['さきほど化学資源から火薬を作りましたね。','next'],
+   ['同じ化学資源でもレシピを変えると薬剤を作れます。','next'],
+   ['加工炉のレシピを薬剤に切り替えてみましょう。','next'],
    ['「カード製造」から補助・軍需工場を選びましょう。','tab:factory','.tab[data-category="factory"]'],
    ['新しい工場を建て、出荷ラインまでベルトをつなぎます。','placed:support','#board'],
    ['応急処置のレシピを選択し、薬剤を届けてください。','next','#modalPanel'],
@@ -71,7 +81,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  ];
  let line=0, selectedTab='', selectedKind='', placementPending=false, beltMode=false, beltStartSeen=false, beltCount=0;
  const root=document.createElement('section');root.id='trainingOverlay';root.hidden=true;
- root.innerHTML='<div class="training-head" id="trainingHandle"><span aria-hidden="true">⠿</span><strong>▦ 工場演習</strong><span id="trainingCount"></span><button id="trainingMenu" type="button" aria-label="演習メニュー">⋯</button></div><div id="trainingMenuItems" hidden><button id="trainingRestart" type="button">最初から</button><button id="trainingExit" type="button">演習を中断</button></div><p id="trainingDescription"></p><div class="training-actions"><button id="trainingHint" type="button">ヒントを隠す</button><button id="trainingNext" type="button">次へ ›</button></div>';
+ root.innerHTML='<div class="training-head" id="trainingHandle"><span aria-hidden="true">⠿</span><strong>▦ 工場演習</strong><span id="trainingCount"></span><button id="trainingMenu" type="button" aria-label="演習メニュー">⋯</button></div><div id="trainingMenuItems" hidden><button id="trainingRestart" type="button">最初から</button><button id="trainingExit" type="button">演習を中断</button></div><p id="trainingDescription"></p><p id="trainingFeedback" hidden role="status"></p><div class="training-actions"><button id="trainingHint" type="button">ヒントを隠す</button><button id="trainingNext" type="button">次へ ›</button></div>';
  document.querySelector('#gameViewport').append(root);
  const $=id=>root.querySelector('#'+id);
  let drag=null;
@@ -84,6 +94,17 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   if(e.target.closest('#belts'))beltMode=true;
   const c=e.target.closest('#board .cell');if(c){if(beltMode){if(!beltStartSeen)beltStartSeen=true;else{beltCount++;beltStartSeen=false}}else placementPending=true;}
  },true);
+ let feedbackTimeout=null;
+ function feedback(message){const el=$('trainingFeedback');el.textContent=message;el.hidden=false;clearTimeout(feedbackTimeout);feedbackTimeout=setTimeout(()=>{el.hidden=true},4800)}
+ // Listen to existing UI errors rather than reimplementing the placement rules.
+ const errorMessages={
+  '建築資材が不足':'建築資材が足りません。右上の資材量を確認してください。資材は時間とともに増えます。',
+  'この資源ゾーンには対応する採集施設だけ設置できます':'採集施設は対応する2×2の資源ゾーンにのみ設置できます。資源の種類と場所を確認しましょう。',
+  'ベルトと重複します':'その場所にはベルトがあります。必要なら先にベルトを撤去しましょう。',
+  '施設と重複します':'すでに別の施設がある場所です。空きマスに移動しましょう。'
+ };
+ const noteTarget=document.querySelector('#hint');
+ if(noteTarget){let previous='';new MutationObserver(()=>{if(phase<0)return;const txt=noteTarget.textContent||'';if(txt===previous)return;previous=txt;for(const [key,msg] of Object.entries(errorMessages))if(txt.includes(key)){feedback(msg);break}}).observe(noteTarget,{subtree:true,childList:true,characterData:true})}
  const board=document.querySelector('#board');
  const ghostLayer=document.createElement('div');ghostLayer.className='training-ghost-layer';ghostLayer.setAttribute('aria-hidden','true');board.append(ghostLayer);
  const stepsHelp=[
@@ -123,21 +144,6 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   if(!selector||!hintVisible)return;
   document.querySelectorAll(selector).forEach(n=>n.classList.add('training-glow'));
  }
- function highlight(){
-  if(phase<0)return;
-  const p=PHASES[phase];let target='';
-  if(phase===0){target=factory.buildings.some(b=>b.kind==='iron')?'#belts':'.tab[data-category="gather"]'}
-  else if(phase===1)target='.tab[data-category="process"]';
-  else if(phase===2)target=factory.buildings.some(b=>b.kind==='chem')?'.tab[data-category="process"]':'.tab[data-category="gather"]';
-  else if(phase===4)target=factory.buildings.some(b=>b.kind==='support')?'#belts':'.tab[data-category="factory"]';
-  else if(p.battle)target='#battleButton';
-  else target=p.tab?`.tab[data-category="${p.tab}"]`:'#belts';
-  glow(target);
-  if(hintVisible){const names=[['鉄鉱石採集'],['加工炉'],['化学資源採集','加工炉'],[],['補助・軍需工場'],[],[]][phase]||[];
-   for(const btn of document.querySelectorAll('#buildingCards button'))if(names.some(n=>btn.textContent.includes(n)))btn.classList.add('training-glow');
-   for(const btn of document.querySelectorAll('#modalPanel button'))if((phase===1&&btn.textContent.includes('装甲板'))||(phase===2&&btn.textContent.includes('重装歩兵'))||(phase===4&&btn.textContent.includes('応急処置')))btn.classList.add('training-glow');
-  }
- }
  function current(){return LINES[phase]?.[Math.min(line,LINES[phase].length-1)]}
  function conditionMet(mode){
   if(mode==='next')return false;
@@ -158,12 +164,14 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   $('trainingDescription').textContent=sentence;
   const next=$('trainingNext');next.hidden=mode!=='next';next.disabled=mode!=='next';
   // Glow only the button required for the current sentence.
-  glow(selector||'');lastGuideKey='';paintGhosts();
+  glow(selector&&selector!=='#board'&&selector!=='#floatingActions'&&selector!=='#modalPanel'&&selector!=='#battlePreview'?selector:'');
+  if(mode.startsWith('select:')){const names={iron:'鉄鉱石採集',chem:'化学資源採集',smelter:'加工炉',support:'補助・軍需工場'};for(const b of document.querySelectorAll('#buildingCards button'))if(b.textContent.includes(names[mode.slice(7)]||'\u0000'))b.classList.add('training-glow')}
+  lastGuideKey='';paintGhosts();
  }
- function nextLine(){if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
+ function nextLine(){ $('trainingFeedback').hidden=true;if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
  function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
  function advance(){phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===3)battle.ready=battle.time+20;render();}
- function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200;
+ function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200; // Training allowance; explained in the opening dialogue.
   // Fixed, open training field. Factory and shipping belt use normal placement functions.
   factory.zones=[{x:2,y:11,kind:'iron',resource:'鉄鉱石'},{x:2,y:16,kind:'chem',resource:'化学資源'},{x:16,y:2,kind:'copper',resource:'銅鉱石'},{x:16,y:16,kind:'oil',resource:'原油'}];
   const err=place(factory,'infantry',7,11,0);if(err)throw new Error(err);
