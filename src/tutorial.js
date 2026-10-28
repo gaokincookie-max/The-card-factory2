@@ -14,10 +14,76 @@ const PHASES=[
 export function createTutorial({factory,battle,openBattle,openFactory,draw,updateDock}){
  let phase=-1,shippedStart=0,lastHand=[],hpAtPause=null,overlay=null,light=null,completed=false;
  let lastGuideKey='', hintVisible=true, lastGlowKey='';
+ // One sentence at a time. Action steps advance only when the actual UI/game state changes.
+ const LINES=[
+  [
+   ['ようこそ、工場演習へ。まず軽装歩兵を製造します。','next'],
+   ['工場と出荷ラインは設置済みです。鉄鉱石だけ供給しましょう。','next'],
+   ['「採集」タブを押してください。','tab:gather','.tab[data-category="gather"]'],
+   ['「鉄鉱石採集」を選んでください。','select:iron','#buildingCards button'],
+   ['鉄鉱石ゾーンを押し、施設を仮配置しましょう。','pending:iron','#board'],
+   ['仮配置した施設は「↻」で回転できます。採集施設はそのままで構いません。','next','#floatingActions'],
+   ['問題なければ「✓」で設置を確定しましょう。','placed:iron','#floatingActions'],
+   ['次に「ベルト敷設」を押してください。','beltmode','#belts'],
+   ['まず採集施設の出口側にあるマスをタップし、ベルトの始点を決めましょう。','beltstart','#board'],
+   ['同じ行または列の終点をタップすると、ベルトをまとめて敷けます。','beltdone','#board'],
+   ['矢印が工場の入口へ向いているか確認しましょう。','next','#board'],
+   ['軽装歩兵が出荷されると自動的に次へ進みます。','ship'],
+  ],
+  [
+   ['次は素材の加工です。まず「加工」タブを押しましょう。','tab:process','.tab[data-category="process"]'],
+   ['「加工炉」を選び、工場の近くに仮配置しましょう。','select:smelter','#buildingCards button'],
+   ['空いたマスに加工炉を置き「✓」で確定します。','placed:smelter','#floatingActions'],
+   ['加工炉へ鉄鉱石を運ぶベルトをつなぎましょう。','next','#belts'],
+   ['加工炉を押すとレシピを選べます。「装甲板」に設定しましょう。','next','#modalPanel'],
+   ['装甲板が実際に作られるまで待ちましょう。','material:装甲板'],
+  ],
+  [
+   ['重装歩兵には装甲板と火薬が必要です。','next'],
+   ['化学資源ゾーンに採集施設を設置しましょう。','placed:chem','.tab[data-category="gather"]'],
+   ['別の加工炉を設置して化学資源を搬入します。','next','.tab[data-category="process"]'],
+   ['レシピを「火薬」に変更しましょう。','next','#modalPanel'],
+   ['装甲板と火薬を歩兵工場へ届けましょう。','next','#belts'],
+   ['歩兵工場のレシピを「重装歩兵」に切り替えます。','next','#modalPanel'],
+   ['重装歩兵が出荷されれば成功です。','ship'],
+  ],
+  [
+   ['次は戦闘です。「戦闘画面」を開きましょう。','battleview','#battleButton'],
+   ['手札の軽装歩兵と重装歩兵を味方の前衛・後衛へ配置します。','next','#battlePreview'],
+   ['ユニットは自動で攻撃します。味方が負傷するまで観察しましょう。','wounded'],
+  ],
+  [
+   ['味方が負傷しました。戦闘だけを止め、工場に戻ります。','next'],
+   ['化学資源から薬剤を加工しましょう。','next','.tab[data-category="process"]'],
+   ['「カード製造」から補助・軍需工場を選びましょう。','tab:factory','.tab[data-category="factory"]'],
+   ['新しい工場を建て、出荷ラインまでベルトをつなぎます。','placed:support','#board'],
+   ['応急処置のレシピを選択し、薬剤を届けてください。','next','#modalPanel'],
+   ['応急処置の出荷を待ちましょう。','ship'],
+  ],
+  [
+   ['「戦闘画面」へ戻ります。','battleview','#battleButton'],
+   ['応急処置を選び、HPが減った味方に使ってください。','healed','#battlePreview'],
+  ],
+  [
+   ['回復に成功しました。戦闘が再開します。','next'],
+   ['敵を倒せば演習クリアです。','victory'],
+  ],
+ ];
+ let line=0, selectedTab='', selectedKind='', placementPending=false, beltMode=false, beltStartSeen=false, beltCount=0;
  const root=document.createElement('section');root.id='trainingOverlay';root.hidden=true;
- root.innerHTML='<div class="training-head"><strong>▦ 工場演習</strong><span id="trainingCount"></span><button type="button" id="trainingExit">終了</button></div><strong id="trainingTitle"></strong><p id="trainingDescription"></p><div class="training-actions"><button id="trainingHint" type="button">ヒントを隠す</button><button id="trainingSkip" type="button">最初から</button></div>';
+ root.innerHTML='<div class="training-head" id="trainingHandle"><span aria-hidden="true">⠿</span><strong>▦ 工場演習</strong><span id="trainingCount"></span><button id="trainingMenu" type="button" aria-label="演習メニュー">⋯</button></div><div id="trainingMenuItems" hidden><button id="trainingRestart" type="button">最初から</button><button id="trainingExit" type="button">演習を中断</button></div><p id="trainingDescription"></p><div class="training-actions"><button id="trainingHint" type="button">ヒントを隠す</button><button id="trainingNext" type="button">次へ ›</button></div>';
  document.querySelector('#gameViewport').append(root);
  const $=id=>root.querySelector('#'+id);
+ let drag=null;
+ $('trainingHandle').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return; const rect=root.getBoundingClientRect(); drag={x:e.clientX,y:e.clientY,left:root.offsetLeft,top:root.offsetTop};root.setPointerCapture(e.pointerId);e.preventDefault()});
+ root.addEventListener('pointermove',e=>{if(!drag)return;const viewport=root.parentElement;let dx=e.clientX-drag.x,dy=e.clientY-drag.y;const matrix=new DOMMatrixReadOnly(getComputedStyle(viewport).transform);if(!matrix.isIdentity){const det=matrix.a*matrix.d-matrix.b*matrix.c;if(Math.abs(det)>1e-6){const lx=(matrix.d*dx-matrix.c*dy)/det;const ly=(-matrix.b*dx+matrix.a*dy)/det;dx=lx;dy=ly}}root.style.left=Math.max(0,Math.min(viewport.clientWidth-root.offsetWidth,drag.left+dx))+'px';root.style.top=Math.max(0,Math.min(viewport.clientHeight-root.offsetHeight,drag.top+dy))+'px';root.style.transform='none'});
+ root.addEventListener('pointerup',()=>drag=null);root.addEventListener('pointercancel',()=>drag=null);
+ // UI observation is deliberately read-only: the game's existing handlers still own the actions.
+ document.addEventListener('click',e=>{if(phase<0)return;const t=e.target.closest('.tab');if(t)selectedTab=t.dataset.category;
+  const b=e.target.closest('#buildingCards button');if(b){const text=b.textContent;const names={iron:'鉄鉱石採集',smelter:'加工炉',chem:'化学資源採集',support:'補助・軍需工場'};for(const [k,n] of Object.entries(names))if(text.includes(n))selectedKind=k}
+  if(e.target.closest('#belts'))beltMode=true;
+  const c=e.target.closest('#board .cell');if(c){if(beltMode){if(!beltStartSeen)beltStartSeen=true;else{beltCount++;beltStartSeen=false}}else placementPending=true;}
+ },true);
  const board=document.querySelector('#board');
  const ghostLayer=document.createElement('div');ghostLayer.className='training-ghost-layer';ghostLayer.setAttribute('aria-hidden','true');board.append(ghostLayer);
  const stepsHelp=[
@@ -72,12 +138,31 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    for(const btn of document.querySelectorAll('#modalPanel button'))if((phase===1&&btn.textContent.includes('装甲板'))||(phase===2&&btn.textContent.includes('重装歩兵'))||(phase===4&&btn.textContent.includes('応急処置')))btn.classList.add('training-glow');
   }
  }
- function render(){root.hidden=phase<0;if(phase<0){glow();ghostLayer.replaceChildren();return}const p=PHASES[phase];$('trainingCount').textContent=`${phase+1} / ${PHASES.length}`;$('trainingTitle').textContent=p.title;$('trainingDescription').textContent=p.description;
-  let list=root.querySelector('#trainingSteps');if(!list){list=document.createElement('ol');list.id='trainingSteps';root.querySelector('.training-actions').before(list)}
-  list.replaceChildren();for(const t of stepsHelp[phase]){const li=document.createElement('li');li.textContent=t;list.append(li)}
-  lastGuideKey='';highlight();paintGhosts();
+ function current(){return LINES[phase]?.[Math.min(line,LINES[phase].length-1)]}
+ function conditionMet(mode){
+  if(mode==='next')return false;
+  if(mode.startsWith('tab:'))return selectedTab===mode.slice(4);
+  if(mode.startsWith('select:'))return selectedKind===mode.slice(7);
+  if(mode.startsWith('pending:'))return placementPending;
+  if(mode.startsWith('placed:'))return factory.buildings.some(b=>b.kind===mode.slice(7));
+  if(mode==='beltmode')return beltMode;
+  if(mode==='beltstart')return beltStartSeen;
+  if(mode==='beltdone')return beltCount>0&&factory.belts.length>2;
+  if(mode==='battleview')return !document.querySelector('#battlePreview')?.hidden;
+  if(mode==='ship')return false;
+  if(mode==='wounded'||mode==='healed'||mode==='victory'||mode.startsWith('material:'))return false;
+  return false;
  }
- function advance(){phase=Math.min(phase+1,PHASES.length-1);shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===3)battle.ready=battle.time+20;render();}
+ function render(){root.hidden=phase<0;if(phase<0){glow();ghostLayer.replaceChildren();return}
+  const [sentence,mode,selector]=current();$('trainingCount').textContent=`${phase+1}/${PHASES.length} · ${line+1}/${LINES[phase].length}`;
+  $('trainingDescription').textContent=sentence;
+  const next=$('trainingNext');next.hidden=mode!=='next';next.disabled=mode!=='next';
+  // Glow only the button required for the current sentence.
+  glow(selector||'');lastGuideKey='';paintGhosts();
+ }
+ function nextLine(){if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
+ function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
+ function advance(){phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===3)battle.ready=battle.time+20;render();}
  function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200;
   // Fixed, open training field. Factory and shipping belt use normal placement functions.
   factory.zones=[{x:2,y:11,kind:'iron',resource:'鉄鉱石'},{x:2,y:16,kind:'chem',resource:'化学資源'},{x:16,y:2,kind:'copper',resource:'銅鉱石'},{x:16,y:16,kind:'oil',resource:'原油'}];
@@ -85,19 +170,24 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   const built=factory.buildings.find(b=>b.kind==='infantry');selectRecipe(factory,built.id,'card_2_infantry');
   beltLine(factory,9,11,10,11);
   const freshBattle=createBattle(factory);Object.assign(battle,freshBattle);battle.factory=factory;
-  phase=0;shippedStart=0;hpAtPause=null;completed=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
+  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
  }
  function exit(){phase=-1;hpAtPause=null;render()}
- function onPulse(){if(phase<0||completed)return; if(!lastGlowKey||Math.floor(factory.tick*2)!==Number(lastGlowKey)){lastGlowKey=String(Math.floor(factory.tick*2));highlight();paintGhosts()} const p=PHASES[phase];if(p.target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===p.target)){advance();if(phase===3)openBattle();return}
-  if(phase===1&&(factory.buildings.some(b=>b.kind==='smelter'&&(b.output&&itemName(b.output)==='装甲板'||Object.entries(b.inventory||{}).some(([n,count])=>count>0&&decodeItem(n).name==='装甲板')))||factory.belts.some(b=>itemName(b.item)==='装甲板'))){advance();return}
-  if(phase===3){const allies=battle.units[0].flat().filter(u=>u&&u.hp>0);if(allies.length&&battle.time>=battle.ready&&allies.some(u=>u.hp<u.maxHP*.9)){hpAtPause=allies.map(u=>[u.id,u.hp]);advance();openFactory();return}}
-  if(phase===5&&hpAtPause&&hpAtPause.some(([id,oldHp])=>battle.units[0].flat().some(u=>u?.id===id&&u.hp>oldHp))){advance();return}
-  if(phase===6&&battle.victor){completed=true;$('trainingTitle').textContent='演習クリア！';$('trainingDescription').textContent='採集から戦闘まで完了しました。通常対戦でも自由に工場を組み立ててみましょう。';glow()}
+ function onPulse(){if(phase<0||completed)return;
+  const mode=current()?.[1];
+  if(mode!=='next'&&conditionMet(mode)){nextLine();return}
+  if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();if(phase===3)openBattle();return}
+  if(mode==='material:装甲板'&&(factory.buildings.some(b=>b.kind==='smelter'&&(b.output&&itemName(b.output)==='装甲板'||Object.entries(b.inventory||{}).some(([n,count])=>count>0&&decodeItem(n).name==='装甲板')))||factory.belts.some(b=>itemName(b.item)==='装甲板'))){advance();return}
+  if(phase===3&&mode==='wounded'){const allies=battle.units[0].flat().filter(u=>u&&u.hp>0);if(allies.length&&battle.time>=battle.ready&&allies.some(u=>u.hp<u.maxHP*.9)){hpAtPause=allies.map(u=>[u.id,u.hp]);advance();openFactory();return}}
+  if(mode==='healed'&&hpAtPause&&hpAtPause.some(([id,oldHp])=>battle.units[0].flat().some(u=>u?.id===id&&u.hp>oldHp))){advance();return}
+  if(phase===6&&battle.victor){completed=true;$('trainingDescription').textContent='演習クリア！採集から戦闘まで完了しました。';glow();$('trainingNext').hidden=true;return}
  }
  function battleFrozen(){return phase<3||phase===4||phase===5}
- $('trainingExit').onclick=exit;
- $('trainingHint').onclick=()=>{hintVisible=!hintVisible;$('trainingHint').textContent=hintVisible?'ヒントを隠す':'ヒントを表示';lastGuideKey='';highlight();paintGhosts()};
- $('trainingSkip').onclick=()=>{if(phase<0)return;if(window.confirm('演習用の工場と戦闘状態を初期化して、最初から練習しますか？'))begin()};
+ $('trainingNext').onclick=()=>{if(current()?.[1]==='next')nextLine()};
+ $('trainingMenu').onclick=()=>{$('trainingMenuItems').hidden=!$('trainingMenuItems').hidden};
+ $('trainingExit').onclick=()=>{if(window.confirm('演習を中断してメニューへ戻りますか？'))exit()};
+ $('trainingRestart').onclick=()=>{if(window.confirm('演習を最初からやり直しますか？'))begin()};
+ $('trainingHint').onclick=()=>{hintVisible=!hintVisible;$('trainingHint').textContent=hintVisible?'ヒントを隠す':'ヒントを表示';lastGuideKey='';render()};
  window.addEventListener('resize',()=>{lastGuideKey='';paintGhosts()});
  return {begin,exit,onPulse,battleFrozen,isActive:()=>phase>=0};
 }

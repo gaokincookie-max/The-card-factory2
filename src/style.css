@@ -723,3 +723,14 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .training-ghost{position:absolute;box-sizing:border-box;border:2px dashed #83efd1;background:#5ce7ba30;border-radius:3px;display:flex;align-items:center;justify-content:center;text-align:center;color:#eafff6;font-size:11px;font-weight:800;text-shadow:0 1px 3px #061727;pointer-events:none}
 .training-ghost-belt{border-color:#ffd08a;background:#f0af4f24;color:#ffe0ae}
 @media(max-height:550px){#trainingOverlay{max-height:40vh}#trainingSteps{font-size:10px}}
+/* v4.7.26: compact, movable, one-line training dialogue */
+#trainingOverlay{top:12px;left:12px;transform:none;width:min(355px,43%);max-width:calc(100% - 24px);max-height:min(180px,43vh);overflow:visible;padding:9px 12px;background:#102a3bf4}
+#trainingOverlay .training-head{touch-action:none;cursor:grab;user-select:none;margin-bottom:7px}
+#trainingOverlay .training-head:active{cursor:grabbing}
+#trainingOverlay #trainingDescription{font-size:13px;font-weight:650;line-height:1.55;margin:8px 0;max-height:65px;overflow-y:auto}
+#trainingOverlay .training-actions{justify-content:space-between}
+#trainingOverlay #trainingMenuItems{position:absolute;top:100%;right:0;z-index:10;background:#173747;border:1px solid #78c5ba;border-radius:8px;padding:6px;box-shadow:0 5px 18px #0008}
+#trainingOverlay #trainingMenuItems[hidden]{display:none!important}
+#trainingOverlay #trainingMenuItems button{display:block;width:100%;margin:4px 0;padding:5px 8px}
+#trainingOverlay #trainingNext[hidden]{display:none!important}
+@media(max-height:550px){#trainingOverlay{top:7px;left:7px;width:min(365px,43%);max-height:45vh;padding:6px 9px}#trainingOverlay #trainingDescription{font-size:11px;max-height:54px}}
