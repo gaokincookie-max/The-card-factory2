@@ -1,7 +1,7 @@
 /** Guided single-player scenario. The normal engine owns every production,
  * shipment, deployment, combat and support-card action; this only observes it. */
 import {initialState,place,beltLine,selectRecipe,itemName,catalog,decodeItem} from './engine.js';
-import {createBattle} from './battle.js';
+import {createBattle,deploy} from './battle.js';
 const PHASES=[
  {title:'鉄鉱石から軽装歩兵を製造',description:'採集メニューから「鉄鉱石採集」を選び、光っている鉄鉱石ゾーンに設置します。次にベルトで既設の歩兵工場の左側へつなぎましょう。工場の右側は出荷区画につながっています。',target:'軽装歩兵',tab:'gather',kind:'iron'},
  {title:'軽装歩兵で初めて戦う',description:'最初のユニットを配置し、強敵が現れたら工場を改造します。',battle:true},
@@ -15,6 +15,7 @@ const PHASES=[
 export function createTutorial({factory,battle,openBattle,openFactory,draw,updateDock}){
  let phase=-1,shippedStart=0,lastHand=[],hpAtPause=null,overlay=null,light=null,completed=false,enemyIntroduced=false;
  let lastGuideKey='', hintVisible=true, lastGlowKey='';
+ let trainingColumn=2,firstOpponent=null,reinforcement=null,firstCoreHP=null,heavyId=null;
  // One sentence at a time. Action steps advance only when the actual UI/game state changes.
  const LINES=[
   [
@@ -37,13 +38,18 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['軽装歩兵が出荷されると自動的に次へ進みます。','ship'],
   ],
   [
-   ['軽装歩兵ができました。まずはこのカードを戦場で使ってみましょう。','next'],
-   ['戦闘中も工場は動き続けます。手札が満杯になると新しいカードを出荷できません。','next'],
-   ['『戦闘画面』を開きましょう。','battleview','#battleButton'],
-   ['手札の軽装歩兵を押したまま、青い味方前衛の空き枠まで動かし、指を離しましょう。','allyplaced'],
-   ['ユニットは配置後に自動攻撃します。HPは体力、攻撃力は攻撃の強さ、リロードは攻撃間隔です。','next'],
-   ['敵が強力なユニットを出してきました。軽装歩兵だけでは苦戦しそうです。','next'],
-   ['軽装歩兵が倒れたら戦闘を停止し、より強いカードの生産ラインを作ります。','lightfallen'],
+   ['軽装歩兵ができました。まずは戦闘画面を開きましょう。','next'],
+   ['戦闘画面では、味方本体と敵本体のHPを確認できます。','next','#allyHpMini'],
+   ['カードをタップすると詳細を確認できます。HPは耐久力、攻撃力は一度の攻撃の基準です。','next'],
+   ['リロードは攻撃までの間隔を示します。能力があるカードは説明欄も確認しましょう。','next'],
+   ['今回は軽装歩兵を後衛の光る枠にドラッグして配置しましょう。','rearplaced'],
+   ['配置が完了しました。敵も訓練用のユニットを配置します。','next'],
+   ['この敵は攻撃できません。まずは自動攻撃を観察しましょう。','firstdefeated'],
+   ['敵のユニットを倒しました！倒された枠は10秒間再配置できません。','next'],
+   ['敵の前衛・後衛が両方空くと、その列から敵本体を攻撃できます。','corehit'],
+   ['次の敵が来るまで、10秒の再配置待ちを観察しましょう。','reinforcement'],
+   ['敵の歩兵分隊が登場しました。今度は攻撃してきます。','next'],
+   ['軽装歩兵のHPが減っています。倒される前に戦闘を止めて工場を改造しましょう。','danger'],
   ],
   [
    ['敵の増援に対応するため、工場へ戻って生産ラインを改造します。','next'],
@@ -70,8 +76,9 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   [
    ['重装歩兵が完成しました。戦闘画面に戻りましょう。','battleview','#battleButton'],
    ['重装歩兵の詳細からHP・攻撃力・リロードと能力説明を確認できます。','next'],
-   ['重装歩兵を押したまま味方の空き枠へドラッグし、指を離して配置しましょう。','heavyplaced'],
-   ['敵と交戦して、味方が負傷したら補助カードの作り方を学びます。','wounded'],
+   ['重装歩兵を軽装歩兵と同じ列の前衛へドラッグして配置しましょう。','heavyplaced'],
+   ['重装歩兵が前衛に入ると、後衛の軽装歩兵を守れます。戦闘を再開しましょう。','next'],
+   ['重装歩兵のHPが減ってきたら、回復用の補助カードを作りましょう。','wounded'],
   ],
   [
    ['味方が負傷しました。戦闘だけを止め、工場に戻ります。','next'],
@@ -169,8 +176,9 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   if(mode==='beltstart')return beltStartSeen;
   if(mode==='beltdone')return beltCount>0&&factory.belts.length>2;
   if(mode==='battleview')return !document.querySelector('#battlePreview')?.hidden;
+  if(mode==='rearplaced')return battle.units[0].some((col,i)=>col[1]?.name==='軽装歩兵'&&col[1].hp>0);
   if(mode==='allyplaced')return battle.units[0].flat().some(u=>u?.name==='軽装歩兵'&&u.hp>0);
-  if(mode==='heavyplaced')return battle.units[0].flat().some(u=>u?.name==='重装歩兵'&&u.hp>0);
+  if(mode==='heavyplaced')return battle.units[0][trainingColumn][0]?.name==='重装歩兵'&&battle.units[0][trainingColumn][0].hp>0;
   if(mode==='ship')return false;
   if(mode==='wounded'||mode==='healed'||mode==='victory'||mode.startsWith('material:'))return false;
   return false;
@@ -178,7 +186,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  function renderVisual(mode){
   const visual=$('trainingVisual');visual.hidden=true;visual.replaceChildren();
   const add=(label,detail)=>{visual.hidden=false;const a=document.createElement('span');a.className='training-visual-chip';a.textContent=label;visual.append(a);if(detail){const b=document.createElement('span');b.className='training-visual-caption';b.textContent=detail;visual.append(b)}};
-  if(mode==='allyplaced'||mode==='heavyplaced'){
+  if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced'){
    add('カードを長押し → 味方の空き枠へ移動 → 指を離す','タップは詳細表示です。配置にはドラッグ操作が必要です。');
   }else if(mode==='beltstart')add('① 採集施設の右隣をタップ','始点を指定します。');
   else if(mode==='beltdone')add('② 歩兵工場の左隣をタップ','終点を指定します。矢印の向きも確認してください。');
@@ -187,11 +195,13 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  }
  function highlightExact(mode){
   document.querySelectorAll('.training-target-cell').forEach(n=>n.classList.remove('training-target-cell'));
-  if(mode==='allyplaced'||mode==='heavyplaced'){
-   const name=mode==='allyplaced'?'軽装歩兵':'重装歩兵';
+  if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced'){
+   const name=mode==='heavyplaced'?'重装歩兵':'軽装歩兵';
    const handCards=Array.from(document.querySelectorAll('#combatHand .combat-hand-cell'));
    const wanted=handCards.find(c=>c.textContent.includes(name));wanted?.querySelector('.card')?.classList.add('training-target-cell');
-   const slot=document.querySelector('#combatBoard .combat-slot.ally[data-empty="true"][data-row="0"]');slot?.classList.add('training-target-cell');
+   const wantedRow=mode==='heavyplaced'?0:1;
+   const slots=Array.from(document.querySelectorAll('#combatBoard .combat-slot.ally'));
+   const slot=slots.find(c=>Number(c.dataset.row)===wantedRow&&Number(c.dataset.column)===trainingColumn)||slots.find(c=>Number(c.dataset.row)===wantedRow);slot?.classList.add('training-target-cell');
   }
   if(mode==='beltstart'||mode==='beltdone'){
    // The guide's fixed starting layout uses a 2x2 iron zone at (2,11),
@@ -211,29 +221,53 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  }
  function nextLine(){ $('trainingFeedback').hidden=true;if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
  function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
- function advance(){if(phase===0||phase===3){const inf=factory.buildings.find(b=>b.kind==='infantry');if(inf)selectRecipe(factory,inf.id,phase===0?'card_3_infantry':'card_5_infantry');}phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===1){battle.ready=battle.time+3;openBattle();}render();}
+ function advance(){if(phase===0||phase===3){const inf=factory.buildings.find(b=>b.kind==='infantry');if(inf)selectRecipe(factory,inf.id,phase===0?'card_3_infantry':'card_5_infantry');}phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===1){battle.ready=0;openBattle();}render();}
  function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200; // Training allowance; explained in the opening dialogue.
   // Fixed, open training field. Factory and shipping belt use normal placement functions.
   factory.zones=[{x:2,y:11,kind:'iron',resource:'鉄鉱石'},{x:2,y:16,kind:'chem',resource:'化学資源'},{x:16,y:2,kind:'copper',resource:'銅鉱石'},{x:16,y:16,kind:'oil',resource:'原油'}];
   const err=place(factory,'infantry',7,11,0);if(err)throw new Error(err);
   const built=factory.buildings.find(b=>b.kind==='infantry');selectRecipe(factory,built.id,'card_2_infantry');
   beltLine(factory,9,11,10,11);
-  const existingStats=battle.stats;const freshBattle=createBattle(factory);Object.assign(battle,freshBattle);battle.factory=factory;battle.stats=existingStats||{};
-  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
+  const existingStats=battle.stats;const freshBattle=createBattle(factory);Object.assign(battle,freshBattle);battle.factory=factory;battle.stats=existingStats||{};battle.scriptedOpponents=true;battle.health[1]=Math.max(battle.health[1],1000);battle.maxHealth=Math.max(battle.maxHealth,1000);
+  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;firstOpponent=null;reinforcement=null;firstCoreHP=null;heavyId=null;trainingColumn=2;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
  }
  function exit(){phase=-1;hpAtPause=null;render()}
  function onPulse(){if(phase<0||completed)return;
   const mode=current()?.[1];
-  if(mode==='allyplaced'||mode==='heavyplaced')highlightExact(mode);
-  if(phase===1&&mode==='lightfallen'&&!battle.units[0].flat().some(u=>u?.name==='軽装歩兵'&&u.hp>0)&&battle.units[0].flat().some(u=>u?.name==='軽装歩兵')){advance();openFactory();return;}
+  if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced')highlightExact(mode);
+  if(phase===1){
+   const rear=battle.units[0][trainingColumn][1];
+   if(mode==='rearplaced'){
+    const where=battle.units[0].findIndex(col=>col[1]?.name==='軽装歩兵'&&col[1].hp>0);
+    if(where>=0){trainingColumn=where;nextLine();return;}
+   }
+   if(mode==='firstdefeated'&&!firstOpponent){
+    if(deploy(battle,1,{name:'野戦指揮官',mods:[]},trainingColumn,0))firstOpponent=battle.units[1][trainingColumn][0];
+   }
+   if(mode==='firstdefeated'&&firstOpponent?.hp===0){nextLine();return;}
+   if(mode==='corehit'&&firstCoreHP===null)firstCoreHP=battle.health[1];
+   if(mode==='corehit'&&firstCoreHP!==null&&battle.health[1]<firstCoreHP){nextLine();return;}
+   if(mode==='reinforcement'&&!reinforcement&&firstOpponent&&!battle.units[1][trainingColumn][0]){
+    if(deploy(battle,1,{name:'歩兵分隊',mods:[]},trainingColumn,0))reinforcement=battle.units[1][trainingColumn][0];
+   }
+   if(mode==='reinforcement'&&reinforcement){nextLine();return;}
+   if(mode==='danger'&&rear&&rear.hp>0&&rear.hp<=rear.maxHP*.65){advance();openFactory();return;}
+   // Prevent the practice unit from dying before the teaching pause.
+   if(rear&&rear.hp>0&&rear.hp<=Math.max(15,rear.maxHP*.27)&&mode==='danger'){advance();openFactory();return;}
+  }
   if(mode!=='next'&&conditionMet(mode)){nextLine();return}
   if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();if(phase===1)openBattle();return}
   if(mode==='material:装甲板'&&(factory.buildings.some(b=>b.kind==='smelter'&&(b.output&&itemName(b.output)==='装甲板'||Object.entries(b.inventory||{}).some(([n,count])=>count>0&&decodeItem(n).name==='装甲板')))||factory.belts.some(b=>itemName(b.item)==='装甲板'))){advance();return}
-  if(phase===4&&mode==='wounded'){const allies=battle.units[0].flat().filter(u=>u&&u.hp>0);if(allies.length&&battle.time>=battle.ready&&allies.some(u=>u.hp<u.maxHP*.9)){hpAtPause=allies.map(u=>[u.id,u.hp]);advance();openFactory();return}}
+  if(phase===4&&mode==='wounded'){
+   const heavy=battle.units[0][trainingColumn][0];
+   if(heavy?.name==='重装歩兵'&&heavy.hp>0&&heavy.hp<=heavy.maxHP*.8){hpAtPause=[[heavy.id,heavy.hp]];advance();openFactory();return;}
+   // If the first squad is defeated, bring in another real unit to demonstrate shielding.
+   if(heavy&&(!battle.units[1][trainingColumn][0]||battle.units[1][trainingColumn][0].hp<=0&&battle.units[1][trainingColumn][0].deadUntil<=battle.time))deploy(battle,1,{name:'歩兵分隊',mods:[]},trainingColumn,0);
+  }
   if(mode==='healed'&&hpAtPause&&hpAtPause.some(([id,oldHp])=>battle.units[0].flat().some(u=>u?.id===id&&u.hp>oldHp))){advance();return}
   if(phase===7&&battle.victor){completed=true;$('trainingDescription').textContent='演習クリア！採集から戦闘まで完了しました。';glow();$('trainingNext').hidden=true;return}
  }
- function battleFrozen(){return phase===0||phase===2||phase===3||phase===5||phase===6}
+ function battleFrozen(){return phase===0||phase===2||phase===3||phase===5||phase===6||(phase===1&&['rearplaced','next'].includes(current()?.[1])&& !firstOpponent)||(phase===4&&current()?.[1]!=='wounded')}
  $('trainingNext').onclick=()=>{if(current()?.[1]==='next')nextLine()};
  $('trainingMenu').onclick=()=>{$('trainingMenuItems').hidden=!$('trainingMenuItems').hidden};
  $('trainingExit').onclick=()=>{if(window.confirm('演習を中断してメニューへ戻りますか？'))exit()};
