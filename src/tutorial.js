@@ -4,6 +4,7 @@ import {initialState,place,beltLine,selectRecipe,itemName,catalog,decodeItem} fr
 import {createBattle} from './battle.js';
 const PHASES=[
  {title:'鉄鉱石から軽装歩兵を製造',description:'採集メニューから「鉄鉱石採集」を選び、光っている鉄鉱石ゾーンに設置します。次にベルトで既設の歩兵工場の左側へつなぎましょう。工場の右側は出荷区画につながっています。',target:'軽装歩兵',tab:'gather',kind:'iron'},
+ {title:'軽装歩兵で初めて戦う',description:'最初のユニットを配置し、強敵が現れたら工場を改造します。',battle:true},
  {title:'加工炉で装甲板を作る',description:'加工メニューから加工炉を設置しましょう。鉄鉱石を加工炉に搬入し、レシピから「装甲板」を選択します。加工施設の出口には次の設備へ向かうベルトをつなぎます。',tab:'process',kind:'smelter',material:'装甲板'},
  {title:'火薬を作り、重装歩兵を出荷',description:'化学資源採集と加工炉を使って「火薬」を製造。装甲板と火薬を歩兵工場に搬入し、レシピを「重装歩兵」に変更しましょう。半透明の配置例はヒントで、自由な配置でも出荷すれば成功です。',target:'重装歩兵',tab:'gather',kind:'chem'},
  {title:'初めての戦闘',description:'右上の「戦闘画面」を開き、手札の軽装歩兵と重装歩兵を前衛・後衛に配置しましょう。ユニットは自動で攻撃します。負傷したら戦闘の時間を止めます。',battle:true},
@@ -12,7 +13,7 @@ const PHASES=[
  {title:'戦闘を終える',description:'戦闘を再開しました。引き続き通常のルールで敵本体を倒せば演習完了です。',battle:true}
 ];
 export function createTutorial({factory,battle,openBattle,openFactory,draw,updateDock}){
- let phase=-1,shippedStart=0,lastHand=[],hpAtPause=null,overlay=null,light=null,completed=false;
+ let phase=-1,shippedStart=0,lastHand=[],hpAtPause=null,overlay=null,light=null,completed=false,enemyIntroduced=false;
  let lastGuideKey='', hintVisible=true, lastGlowKey='';
  // One sentence at a time. Action steps advance only when the actual UI/game state changes.
  const LINES=[
@@ -22,24 +23,35 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['施設やベルトを建てるには、建築資材を使います。','next','#money'],
    ['演習では練習用に建築資材を多めに用意しました。通常対戦では資材を計画的に使いましょう。','next','#money'],
    ['「採集」タブを押してください。','tab:gather','.tab[data-category="gather"]'],
-   ['「鉄鉱石採集」を選んでください。','select:iron','#buildingCards button'],
+   ['「鉄鉱石採集」を選んでください。','select:iron'],
    ['鉄鉱石ゾーンを押し、施設を仮配置しましょう。','pending:iron','#board'],
    ['仮配置中は回転ボタンで向きを変えられます。採集施設はそのままで構いません。','next'],
    ['問題なければ「✓」で設置を確定しましょう。','placed:iron','#floatingActions'],
    ['施設を建てただけでは、鉄鉱石は工場に届きません。','next'],
    ['工場へ運ぶために、ベルトコンベアを敷きましょう。','next'],
    ['次に「ベルト敷設」を押してください。','beltmode','#belts'],
-   ['まず採集施設の出口側にあるマスをタップし、ベルトの始点を決めましょう。','beltstart','#board'],
-   ['同じ行または列の終点をタップすると、ベルトをまとめて敷けます。','beltdone','#board'],
-   ['ベルトの矢印は素材の流れる方向です。工場の入口へ向いているか確認しましょう。','next'],
-   ['手札は最大8枚です。不要なカードを作り続けると満杯になるので注意しましょう。','next'],
+   ['『ベルト敷設』を選んだら、採集施設の右隣（鉄鉱石ゾーンの右側）の空きマスを最初にタップします。','beltstart'],
+   ['次に歩兵工場の左隣の空きマスをタップします。同じ横列の始点から終点までベルトが敷かれます。','beltdone'],
+   ['矢印が採集施設から歩兵工場へ向いていることを確認しましょう。','next'],
+   ['手札に入るのは8枚まで。工場が生産を続けると満杯になるため注意が必要です。','next'],
    ['軽装歩兵が出荷されると自動的に次へ進みます。','ship'],
   ],
   [
+   ['軽装歩兵ができました。まずはこのカードを戦場で使ってみましょう。','next'],
+   ['戦闘中も工場は動き続けます。手札が満杯になると新しいカードを出荷できません。','next'],
+   ['『戦闘画面』を開きましょう。','battleview','#battleButton'],
+   ['手札から軽装歩兵を選び、前衛の空き枠に配置しましょう。','allyplaced'],
+   ['ユニットは配置後に自動攻撃します。HPは体力、攻撃力は攻撃の強さ、リロードは攻撃間隔です。','next'],
+   ['敵が強力なユニットを出してきました。軽装歩兵だけでは苦戦しそうです。','next'],
+   ['軽装歩兵が倒れたら戦闘を停止し、より強いカードの生産ラインを作ります。','lightfallen'],
+  ],
+  [
+   ['敵の増援に対応するため、工場へ戻って生産ラインを改造します。','next'],
+   ['ベルトの上に施設を重ねて建てることはできません。必要ならベルトを撤去しましょう。','next'],
    ['次は素材の加工です。まず「加工」タブを押しましょう。','tab:process','.tab[data-category="process"]'],
-   ['「加工炉」を選び、工場の近くに仮配置しましょう。','select:smelter','#buildingCards button'],
-   ['加工炉には入口と出口があります。青い矢印が入口、橙色が出口です。','next'],
-   ['向きが違う場合は仮配置中に回転できます。ベルトがつながる向きを選びましょう。','next'],
+   ['「加工炉」を選び、工場の近くに仮配置しましょう。','select:smelter'],
+   ['加工炉の青い矢印は入口、橙色は出口です。向きを間違えると素材が届きません。','next'],
+   ['仮配置の『↻』を押すと90度回転します。入口と出口がベルトに合う向きを確かめましょう。','next'],
    ['空いたマスに加工炉を置き「✓」で確定します。','placed:smelter'],
    ['加工炉へ鉄鉱石を運ぶベルトをつなぎましょう。','next','#belts'],
    ['加工炉を押すとレシピを選べます。「装甲板」に設定しましょう。','next','#modalPanel'],
@@ -56,9 +68,10 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['重装歩兵が出荷されれば成功です。','ship'],
   ],
   [
-   ['次は戦闘です。「戦闘画面」を開きましょう。','battleview','#battleButton'],
-   ['手札の軽装歩兵と重装歩兵を味方の前衛・後衛へ配置します。','next','#battlePreview'],
-   ['ユニットは自動で攻撃します。味方が負傷するまで観察しましょう。','wounded'],
+   ['重装歩兵が完成しました。戦闘画面に戻りましょう。','battleview','#battleButton'],
+   ['重装歩兵の詳細からHP・攻撃力・リロードと能力説明を確認できます。','next'],
+   ['重装歩兵を前衛の空き枠に配置しましょう。','heavyplaced'],
+   ['敵と交戦して、味方が負傷したら補助カードの作り方を学びます。','wounded'],
   ],
   [
    ['味方が負傷しました。戦闘だけを止め、工場に戻ります。','next'],
@@ -118,6 +131,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  ];
  const ghostSpecs=[
   [{x:2,y:11,w:2,h:2,label:'鉄鉱石採集'}, {x:4,y:11,w:3,h:1,label:'→ 工場へ',belt:true}],
+  [],
   [{x:5,y:15,w:1,h:1,label:'加工炉の配置例'}],
   [{x:2,y:16,w:2,h:2,label:'化学資源採集'}, {x:5,y:18,w:1,h:1,label:'加工炉の配置例'}],
   [],
@@ -142,7 +156,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  function glow(selector){
   document.querySelectorAll('.training-glow').forEach(n=>n.classList.remove('training-glow'));
   if(!selector||!hintVisible)return;
-  document.querySelectorAll(selector).forEach(n=>n.classList.add('training-glow'));
+  document.querySelector(selector)?.classList.add('training-glow');
  }
  function current(){return LINES[phase]?.[Math.min(line,LINES[phase].length-1)]}
  function conditionMet(mode){
@@ -155,6 +169,8 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   if(mode==='beltstart')return beltStartSeen;
   if(mode==='beltdone')return beltCount>0&&factory.belts.length>2;
   if(mode==='battleview')return !document.querySelector('#battlePreview')?.hidden;
+  if(mode==='allyplaced')return battle.units[0].flat().some(u=>u?.name==='軽装歩兵'&&u.hp>0);
+  if(mode==='heavyplaced')return battle.units[0].flat().some(u=>u?.name==='重装歩兵'&&u.hp>0);
   if(mode==='ship')return false;
   if(mode==='wounded'||mode==='healed'||mode==='victory'||mode.startsWith('material:'))return false;
   return false;
@@ -170,7 +186,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  }
  function nextLine(){ $('trainingFeedback').hidden=true;if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
  function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
- function advance(){phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===3)battle.ready=battle.time+20;render();}
+ function advance(){if(phase===0||phase===3){const inf=factory.buildings.find(b=>b.kind==='infantry');if(inf)selectRecipe(factory,inf.id,phase===0?'card_3_infantry':'card_5_infantry');}phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===1){battle.ready=battle.time+3;openBattle();}render();}
  function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200; // Training allowance; explained in the opening dialogue.
   // Fixed, open training field. Factory and shipping belt use normal placement functions.
   factory.zones=[{x:2,y:11,kind:'iron',resource:'鉄鉱石'},{x:2,y:16,kind:'chem',resource:'化学資源'},{x:16,y:2,kind:'copper',resource:'銅鉱石'},{x:16,y:16,kind:'oil',resource:'原油'}];
@@ -178,19 +194,20 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   const built=factory.buildings.find(b=>b.kind==='infantry');selectRecipe(factory,built.id,'card_2_infantry');
   beltLine(factory,9,11,10,11);
   const freshBattle=createBattle(factory);Object.assign(battle,freshBattle);battle.factory=factory;
-  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
+  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
  }
  function exit(){phase=-1;hpAtPause=null;render()}
  function onPulse(){if(phase<0||completed)return;
   const mode=current()?.[1];
+  if(phase===1&&mode==='lightfallen'&&!battle.units[0].flat().some(u=>u?.name==='軽装歩兵'&&u.hp>0)&&battle.units[0].flat().some(u=>u?.name==='軽装歩兵')){advance();openFactory();return;}
   if(mode!=='next'&&conditionMet(mode)){nextLine();return}
-  if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();if(phase===3)openBattle();return}
+  if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();if(phase===1)openBattle();return}
   if(mode==='material:装甲板'&&(factory.buildings.some(b=>b.kind==='smelter'&&(b.output&&itemName(b.output)==='装甲板'||Object.entries(b.inventory||{}).some(([n,count])=>count>0&&decodeItem(n).name==='装甲板')))||factory.belts.some(b=>itemName(b.item)==='装甲板'))){advance();return}
-  if(phase===3&&mode==='wounded'){const allies=battle.units[0].flat().filter(u=>u&&u.hp>0);if(allies.length&&battle.time>=battle.ready&&allies.some(u=>u.hp<u.maxHP*.9)){hpAtPause=allies.map(u=>[u.id,u.hp]);advance();openFactory();return}}
+  if(phase===4&&mode==='wounded'){const allies=battle.units[0].flat().filter(u=>u&&u.hp>0);if(allies.length&&battle.time>=battle.ready&&allies.some(u=>u.hp<u.maxHP*.9)){hpAtPause=allies.map(u=>[u.id,u.hp]);advance();openFactory();return}}
   if(mode==='healed'&&hpAtPause&&hpAtPause.some(([id,oldHp])=>battle.units[0].flat().some(u=>u?.id===id&&u.hp>oldHp))){advance();return}
-  if(phase===6&&battle.victor){completed=true;$('trainingDescription').textContent='演習クリア！採集から戦闘まで完了しました。';glow();$('trainingNext').hidden=true;return}
+  if(phase===7&&battle.victor){completed=true;$('trainingDescription').textContent='演習クリア！採集から戦闘まで完了しました。';glow();$('trainingNext').hidden=true;return}
  }
- function battleFrozen(){return phase<3||phase===4||phase===5}
+ function battleFrozen(){return phase===0||phase===2||phase===3||phase===5||phase===6}
  $('trainingNext').onclick=()=>{if(current()?.[1]==='next')nextLine()};
  $('trainingMenu').onclick=()=>{$('trainingMenuItems').hidden=!$('trainingMenuItems').hidden};
  $('trainingExit').onclick=()=>{if(window.confirm('演習を中断してメニューへ戻りますか？'))exit()};
