@@ -184,7 +184,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       const [teamString, colString, rowString] = key.split('-');
       const team = Number(teamString), col = Number(colString), row = Number(rowString);
       const sideNear = team === getMyTeam();
-      const z = sideNear ? (row === 0 ? rowDepths[0] : rowDepths[1])
+      const z = sideNear ? (row === 1 ? rowDepths[0] : rowDepths[1])
         : (row === 0 ? rowDepths[2] : rowDepths[3]);
       entry.mesh.position.set((col - 2) * columnPitch, 0.015, z);
     }
@@ -240,7 +240,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       const unit = battle.units[team]?.[col]?.[row] || null;
       const side = team === myTeam ? 'ally' : 'enemy';
       const highlighted = !!tutorialTarget && team === myTeam && row === tutorialTarget.row && (tutorialTarget.col == null || col === tutorialTarget.col) && !unit;
-      const chargeStep = unit?.deadUntil === null && unit?.interval > 0 ? Math.floor(Math.max(0, Math.min(1, 1 - (unit.remaining || 0) / (unit.interval * 100))) * 20) : null;
+      const chargeStep = unit?.deadUntil === null && unit?.interval > 0 ? Math.floor(Math.max(0, Math.min(1, 1 - (unit.remaining || 0) / (unit.interval * 100))) * 8) : null;
       const signature = JSON.stringify([side, unit?.name, unit?.hp, unit?.maxHP, unit?.mods, unit?.deadUntil !== null, chargeStep, highlighted]);
       if (signature !== entry.signature) {
         // Async artwork swaps are deliberately independent of game state.
@@ -290,7 +290,10 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   return {
     update,
     hitAt,
-    setTutorialTarget(target) { tutorialTarget = target; update(); },
+    setTutorialTarget(target) {
+      if (tutorialTarget?.row === target?.row && tutorialTarget?.col === target?.col) return;
+      tutorialTarget = target; update();
+    },
     setDropMode(active) { renderer.domElement.classList.toggle('drop-ready', active); },
     dispose() {
       disposed = true;

@@ -147,7 +147,20 @@ function frame(now){requestAnimationFrame(frame);if(now-lastDraw<(battlePreviewO
   try{if(battlePreviewOpen){battleUI.render()}else{draw();positionFloat()}}catch(error){if(renderErrors++<5)reportRuntime('描画エラー',error);}
 }
 let tutorial=null;
-const mainMenu=mountMainMenu({openTutorial:()=>tutorial.begin(),openOnline:()=>online.show(),openBattle:()=>{if(!battlePreviewOpen)document.querySelector('#battleButton').click()},openFactory:()=>{if(battlePreviewOpen)document.querySelector('#battleButton').click()}});document.querySelector('#openMenuButton').onclick=()=>mainMenu.open();
+// A new CPU session must not inherit tutorial units, hand, map or scripted AI.
+function beginCpuSession(){
+  tutorial?.exit();
+  const freshFactory=initialState();
+  Object.assign(state,freshFactory);
+  const existingStats=battle.stats;
+  Object.assign(battle,createBattle(state));
+  battle.stats=existingStats;
+  battle.factory=state;
+  battle.scriptedOpponents=false;
+  tool='inspect'; pending=null; selected=null; beltStart=null; beltHover=null;
+  hideModal(); drawDock(); draw(); battleUI.render(true); updateHud();
+}
+const mainMenu=mountMainMenu({openTutorial:()=>tutorial.begin(),openOnline:()=>online.show(),openBattle:()=>{beginCpuSession();if(!battlePreviewOpen)document.querySelector('#battleButton').click()},openFactory:()=>{if(battlePreviewOpen)document.querySelector('#battleButton').click()}});document.querySelector('#openMenuButton').onclick=()=>mainMenu.open();
 let battlePreviewOpen=false;document.querySelector('#battleButton').onclick=()=>{battlePreviewOpen=!battlePreviewOpen;document.querySelector('#battlePreview').hidden=!battlePreviewOpen;document.querySelector('.workarea').hidden=battlePreviewOpen;document.querySelector('#dock').hidden=battlePreviewOpen;document.querySelector('#battleButton').textContent=battlePreviewOpen?'▦ 工業画面へ戻る':'⚔ 戦闘画面';if(battlePreviewOpen){battleUI.render()}};tutorial=createTutorial({factory:state,battle,openFactory:()=>{if(battlePreviewOpen)document.querySelector('#battleButton').click()},openBattle:()=>{if(!battlePreviewOpen)document.querySelector('#battleButton').click()},draw,updateDock:drawDock});drawDock();placement();note('設備を選び、工場マップで配置先をタップしてください。');draw();requestAnimationFrame(frame);
 
 

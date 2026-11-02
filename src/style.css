@@ -754,3 +754,12 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   #gameViewport .card-detail-panel{overflow:auto!important;}
   #gameViewport .card-ingredient .fcg-card{width:52px;min-width:52px;}
 }
+
+/* v4.7.33: tutorial remains readable while card detail is open. */
+#gameViewport:has(#cardDetailOverlay:not([hidden])) #trainingOverlay:not([hidden]){
+  z-index:3200;left:8px;top:8px;width:min(285px,32%);max-height:50%;
+}
+#cardDetailPanel .training-detail-focus{
+  outline:3px solid #ffe68a!important;outline-offset:2px;
+  background:#45604b!important;box-shadow:0 0 16px #eab75599;
+}

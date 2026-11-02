@@ -224,6 +224,16 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    const c=document.querySelectorAll('#board>.cell')[y*24+x];c?.classList.add('training-target-cell');
   }
  }
+ function highlightCardDetail(mode){
+  document.querySelectorAll('#cardDetailPanel .training-detail-focus').forEach(n=>n.classList.remove('training-detail-focus'));
+  const panel=document.querySelector('#cardDetailPanel');
+  if(!panel || document.querySelector('#cardDetailOverlay')?.hidden) return;
+  const stats=panel.querySelectorAll('.card-detail-stat');
+  const target=mode==='detailclose'?panel.querySelector('.card-detail-actions button:last-child'):
+    mode==='next' && phase===1 && line===3?stats[0]:
+    mode==='next' && phase===1 && line===4?stats[2]:null;
+  target?.classList.add('training-detail-focus');
+ }
  function render(){root.hidden=phase<0;if(phase<0){glow();ghostLayer.replaceChildren();document.querySelectorAll('.training-target-cell').forEach(n=>n.classList.remove('training-target-cell'));return}
   const [sentence,mode,selector]=current();$('trainingCount').textContent=`${phase+1}/${PHASES.length} · ${line+1}/${LINES[phase].length}`;
   $('trainingDescription').textContent=sentence;
@@ -231,7 +241,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   // Glow only the button required for the current sentence.
   glow(selector&&selector!=='#board'&&selector!=='#floatingActions'&&selector!=='#modalPanel'&&selector!=='#battlePreview'?selector:'');
   if(mode.startsWith('select:')){const names={iron:'鉄鉱石採集',chem:'化学資源採集',smelter:'加工炉',support:'補助・軍需工場'};for(const b of document.querySelectorAll('#buildingCards button'))if(b.textContent.includes(names[mode.slice(7)]||'\u0000'))b.classList.add('training-glow')}
-  renderVisual(mode);highlightExact(mode);lastGuideKey='';paintGhosts();
+  renderVisual(mode);highlightExact(mode);highlightCardDetail(mode);lastGuideKey='';paintGhosts();
  }
  function nextLine(){ $('trainingFeedback').hidden=true;if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
  function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
@@ -246,9 +256,10 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;firstOpponent=null;reinforcement=null;firstCoreHP=null;heavyId=null;trainingColumn=2;dangerPaused=false;firstAssaultDefeated=false;secondAssaultSpawned=false;detailSeen=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
  }
  function exit(){phase=-1;hpAtPause=null;render()}
+ let lastSlotHighlight=0;
  function onPulse(){if(phase<0||completed)return;
   const mode=current()?.[1];
-  if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced')highlightExact(mode);
+  if((mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced') && Date.now()-lastSlotHighlight>250){lastSlotHighlight=Date.now();highlightExact(mode);}
   if(mode==='detailopen'&&conditionMet(mode))detailSeen=true;
   if(phase===1){
    const rear=battle.units[0][trainingColumn][1];
