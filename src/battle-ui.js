@@ -4,7 +4,7 @@ import {makeCard,openCardDetail} from './card-ui.js';
 import {recipes,itemName,warehouseStock,catalog} from './engine.js';
 import {isUnit,localBattleCommand} from './battle.js';
 import {battleArtUrl} from './battle-art.js';
-import {createBattle3D} from './battle-3d.js?v=4.7.31';
+import {createBattle3D} from './battle-3d.js?v=4.7.32';
 export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>0){
  // All player-originated mutations go through the shared command boundary.
  // A legacy-compatible local adapter is kept for isolated UI tests.
@@ -38,7 +38,8 @@ export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>
    applyDisplayMode();
  };
  const board=element.querySelector('#combatBoard'),hand=element.querySelector('#combatHand'),cast=element.querySelector('#combatCast'),message=element.querySelector('#combatSelection');
- element.addEventListener('fcg:training-target', e=>{threeView?.setTutorialTarget(e.detail || null);});
+ let tutorialTarget=null;
+ element.addEventListener('fcg:training-target', e=>{tutorialTarget=e.detail||null;threeView?.setTutorialTarget(tutorialTarget);});
  let drag=null,ghost=null,pointer=null,lastSignature='',notice='',noticeUntil=0,pending=null;
  let threeView=null;
  const threeContainer=document.createElement('div');threeContainer.className='combat-three-container';threeContainer.hidden=true;
@@ -61,7 +62,7 @@ export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>
  function setGhostPosition(x,y){if(!ghost)return;const p=clientToGame(x,y);ghost.style.left=`${p.x}px`;ghost.style.top=`${p.y}px`;}
  function startDrag(card,item,index,x,y){const unit=isUnit(itemName(item));drag={index,unit};ghost=card.cloneNode(true);ghost.classList.add('combat-drag-ghost');gameViewportElement().append(ghost);setGhostPosition(x,y);hand.classList.add('dragging-hand');if(unit){threeView?.setDropMode(true);board.querySelectorAll('.combat-slot.ally[data-empty="true"]').forEach(s=>s.classList.add('drop-ready'))}}
  function moveDrag(x,y){if(!drag)return;setGhostPosition(x,y);clearHighlights();const hit=document.elementFromPoint(x,y);if(drag.unit){board.querySelectorAll('.combat-slot.ally[data-empty="true"]').forEach(s=>s.classList.add('drop-ready'));const slot=hit?.closest('.combat-slot.ally[data-empty="true"]');if(slot&&board.contains(slot))slot.classList.add('drop-hover');if(!threeContainer.hidden && threeView?.hitAt(x,y))threeView.setDropMode(true)}else{}}
- function finishDrag(x,y){if(!drag)return;const {index,unit}=drag;ghost.style.display='none';const hit=document.elementFromPoint(x,y);ghost.style.display='';let result={ok:false,message:'配置をキャンセルしました'};if(unit){const slot=hit?.closest('.combat-slot.ally[data-empty="true"]');const target=slot&&board.contains(slot)?{team:myTeam(),col:Number(slot.dataset.column),row:Number(slot.dataset.row)}:(!threeContainer.hidden ? threeView?.hitAt(x,y) : null);if(target?.team===myTeam()&&!b.units[myTeam()]?.[target.col]?.[target.row]){const col=target.col,row=target.row;const ok=perform('DEPLOY_UNIT',{slot:index,column:col,row}).ok;result={ok,message:ok?'ユニットを配置しました':'配置できません（空きマスと手札を確認してください）'}}}else if(element.querySelector('.combat-battlefield').getBoundingClientRect().top<=y && y<=element.querySelector('.combat-battlefield').getBoundingClientRect().bottom){result=perform('PLAY_CARD',{slot:index});if(result.needsTarget){pending={index,name:itemName(b.factory.hand[index]),phase:'target',type:result.targetType};}}
+ function finishDrag(x,y){if(!drag)return;const {index,unit}=drag;ghost.style.display='none';const hit=document.elementFromPoint(x,y);ghost.style.display='';let result={ok:false,message:'配置をキャンセルしました'};if(unit){const slot=hit?.closest('.combat-slot.ally[data-empty="true"]');const target=slot&&board.contains(slot)?{team:myTeam(),col:Number(slot.dataset.column),row:Number(slot.dataset.row)}:(!threeContainer.hidden ? threeView?.hitAt(x,y) : null);if(target?.team===myTeam()&&tutorialTarget&&(target.row!==tutorialTarget.row||(tutorialTarget.col!=null&&target.col!==tutorialTarget.col))){result={ok:false,message:'演習では光っている枠に配置してください'};}else if(target?.team===myTeam()&&!b.units[myTeam()]?.[target.col]?.[target.row]){const col=target.col,row=target.row;const ok=perform('DEPLOY_UNIT',{slot:index,column:col,row}).ok;result={ok,message:ok?'ユニットを配置しました':'配置できません（空きマスと手札を確認してください）'}}}else if(element.querySelector('.combat-battlefield').getBoundingClientRect().top<=y && y<=element.querySelector('.combat-battlefield').getBoundingClientRect().bottom){result=perform('PLAY_CARD',{slot:index});if(result.needsTarget){pending={index,name:itemName(b.factory.hand[index]),phase:'target',type:result.targetType};}}
  stopDrag();notice=result.message;noticeUntil=Date.now()+3600;if(result.ok)onChange();render(true)}
  function wireDrag(card,item,index){card.style.touchAction='none';card.addEventListener('pointerdown',e=>{if(e.button!==0||pointer)return;pointer={id:e.pointerId,target:card,index,item,x:e.clientX,y:e.clientY,dragged:false};card.setPointerCapture(e.pointerId)});card.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;if(!pointer.dragged&&Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>10){pointer.dragged=true;startDrag(card,item,index,e.clientX,e.clientY)}if(pointer.dragged){e.preventDefault();moveDrag(e.clientX,e.clientY)}});card.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;const wasDrag=pointer.dragged;if(wasDrag){e.preventDefault();e.stopImmediatePropagation();finishDrag(e.clientX,e.clientY)}else{stopDrag();openCardDetail(item)}});card.addEventListener('pointercancel',()=>stopDrag());card.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation()});card.addEventListener('contextmenu',e=>e.preventDefault())}
  function chooseSlot(team,col,row){if(!pending)return false;const data={team,column:col,row};let result;if(pending.phase==='destination'){
@@ -78,6 +79,7 @@ export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>
  createBattle3D(threeContainer,()=>b,myTeam,selectThreeSlot).then(view=>{
    if(!view)return;
    threeView=view;
+   threeView.setTutorialTarget(tutorialTarget);
    applyDisplayMode();
  }).catch(error=>console.warn('3D fallback:',error));
  function render(force=false){const remaining=Math.max(0,Math.ceil(b.ready-b.time));element.querySelector('#battlePhase').textContent=b.victor?(b.victor==='draw'?'引き分け':(b.multiplayer?(b.victor==='team'+myTeam()?'勝利':'敗北'):({cpu:'敗北',player:'勝利'}[b.victor]))):remaining>0?`準備時間 残り${remaining}秒 — 工場は稼働中`:`戦闘中 ・${Math.floor(b.time-b.ready)}秒`;element.querySelector('#combatAlly').textContent=`自軍HP ${b.health[myTeam()]}/${b.maxHealth}`;element.querySelector('#combatEnemy').textContent=`敵HP ${b.health[1-myTeam()]}/${b.maxHealth}`;

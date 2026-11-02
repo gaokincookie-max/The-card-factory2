@@ -57,11 +57,12 @@ function cardArtwork(unit, team, col, row, illustration = null, highlighted = fa
   ctx.fillRect(px(19), px(323), px(218), px(12));
   ctx.fillStyle = '#60d7ae';
   ctx.fillRect(px(19), px(323), px(218) * (unit.maxHP ? Math.max(0, unit.hp / unit.maxHP) : 0), px(12));
-  // Same attack-cycle progress as the 2D brightness overlay.
+  // Match the 2D combat-card-dim: obscure the uncharged upper portion.
+  // Charge fills from bottom to top; HP text remains legible above the shade.
   if (unit.deadUntil === null && unit.interval > 0) {
     const charge = Math.max(0, Math.min(1, 1 - (unit.remaining || 0) / (unit.interval * 100)));
-    ctx.fillStyle = '#142734';ctx.fillRect(px(19), px(340), px(218), px(8));
-    ctx.fillStyle = '#82e8ed';ctx.fillRect(px(19), px(340), px(218) * charge, px(8));
+    ctx.fillStyle = 'rgba(5,13,22,0.58)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height * (1 - charge));
   }
   return canvas;
 }

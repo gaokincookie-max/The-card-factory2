@@ -1,7 +1,8 @@
 /** Guided single-player scenario. The normal engine owns every production,
  * shipment, deployment, combat and support-card action; this only observes it. */
-import {initialState,place,beltLine,selectRecipe,itemName,catalog,decodeItem} from './engine.js';
+import {initialState,place,beltLine,beltAt,selectRecipe,itemName,catalog,decodeItem} from './engine.js';
 import {createBattle,deploy} from './battle.js';
+import {TUTORIAL_BATTLE} from './tutorial-balance-config.js';
 const PHASES=[
  {title:'鉄鉱石から軽装歩兵を製造',description:'採集メニューから「鉄鉱石採集」を選び、光っている鉄鉱石ゾーンに設置します。次にベルトで既設の歩兵工場の左側へつなぎましょう。工場の右側は出荷区画につながっています。',target:'軽装歩兵',tab:'gather',kind:'iron'},
  {title:'軽装歩兵で初めて戦う',description:'最初のユニットを配置し、強敵が現れたら工場を改造します。',battle:true},
@@ -16,6 +17,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  let phase=-1,shippedStart=0,lastHand=[],hpAtPause=null,overlay=null,light=null,completed=false,enemyIntroduced=false;
  let lastGuideKey='', hintVisible=true, lastGlowKey='';
  let trainingColumn=2,firstOpponent=null,reinforcement=null,firstCoreHP=null,heavyId=null;
+ let dangerPaused=false, firstAssaultDefeated=false, secondAssaultSpawned=false, detailSeen=false;
  // One sentence at a time. Action steps advance only when the actual UI/game state changes.
  const LINES=[
   [
@@ -38,27 +40,29 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['軽装歩兵が出荷されると自動的に次へ進みます。','ship'],
   ],
   [
-   ['軽装歩兵ができました。まずは戦闘画面を開きましょう。','next'],
+   ['軽装歩兵ができました。「戦闘画面」を押して開きましょう。','battleview','#battleButton'],
    ['戦闘画面では、味方本体と敵本体のHPを確認できます。','next','#allyHpMini'],
-   ['カードをタップすると詳細を確認できます。HPは耐久力、攻撃力は一度の攻撃の基準です。','next'],
+   ['手札の軽装歩兵をタップして、カード詳細を開きましょう。','detailopen'],
+   ['HPは耐久力、攻撃力は一度の攻撃の基準です。','next'],
    ['リロードは攻撃までの間隔を示します。能力があるカードは説明欄も確認しましょう。','next'],
+   ['詳細画面の「× 閉じる」を押して戻りましょう。','detailclose'],
    ['今回は軽装歩兵を後衛の光る枠にドラッグして配置しましょう。','rearplaced'],
    ['配置が完了しました。敵も訓練用のユニットを配置します。','next'],
    ['この敵は攻撃できません。まずは自動攻撃を観察しましょう。','firstdefeated'],
    ['敵のユニットを倒しました！倒された枠は10秒間再配置できません。','next'],
    ['敵の前衛・後衛が両方空くと、その列から敵本体を攻撃できます。','corehit'],
    ['次の敵が来るまで、10秒の再配置待ちを観察しましょう。','reinforcement'],
-   ['敵の歩兵分隊が登場しました。今度は攻撃してきます。','next'],
+   ['敵の突撃班が登場しました。今度は攻撃してきます。','next'],
    ['軽装歩兵のHPが減っています。倒される前に戦闘を止めて工場を改造しましょう。','danger'],
   ],
   [
-   ['敵の増援に対応するため、工場へ戻って生産ラインを改造します。','next'],
-   ['ベルトの上に施設を重ねて建てることはできません。必要ならベルトを撤去しましょう。','next'],
+   ['軽装歩兵が危険です。「工業画面へ戻る」を押しましょう。','factoryview','#battleButton'],
+   ['既存の鉄鉱石ラインの中央（光るマス）のベルトを撤去しましょう。','removebelt'],
    ['次は素材の加工です。まず「加工」タブを押しましょう。','tab:process','.tab[data-category="process"]'],
-   ['「加工炉」を選び、工場の近くに仮配置しましょう。','select:smelter'],
+   ['「加工炉」を選んでください。撤去して空けたラインに配置します。','select:smelter'],
    ['加工炉の青い矢印は入口、橙色は出口です。向きを間違えると素材が届きません。','next'],
    ['仮配置の『↻』を押すと90度回転します。入口と出口がベルトに合う向きを確かめましょう。','next'],
-   ['空いたマスに加工炉を置き「✓」で確定します。','placed:smelter'],
+   ['ベルトを撤去した場所へ加工炉を置き「✓」で確定します。','placed:smelter'],
    ['加工炉へ鉄鉱石を運ぶベルトをつなぎましょう。','next','#belts'],
    ['加工炉を押すとレシピを選べます。「装甲板」に設定しましょう。','next','#modalPanel'],
    ['装甲板が実際に作られるまで待ちましょう。','material:装甲板'],
@@ -77,11 +81,11 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    ['重装歩兵が完成しました。戦闘画面に戻りましょう。','battleview','#battleButton'],
    ['重装歩兵の詳細からHP・攻撃力・リロードと能力説明を確認できます。','next'],
    ['重装歩兵を軽装歩兵と同じ列の前衛へドラッグして配置しましょう。','heavyplaced'],
-   ['重装歩兵が前衛に入ると、後衛の軽装歩兵を守れます。戦闘を再開しましょう。','next'],
-   ['重装歩兵のHPが減ってきたら、回復用の補助カードを作りましょう。','wounded'],
+   ['重装歩兵が前衛に入ると、後衛の軽装歩兵を守れます。戦闘が再開します。','next'],
+   ['突撃班を撃破しましょう。次の増援で重装歩兵が負傷したら、回復用の補助カードを作ります。','wounded'],
   ],
   [
-   ['味方が負傷しました。戦闘だけを止め、工場に戻ります。','next'],
+   ['味方が負傷しました。戦闘は停止しています。「工業画面へ戻る」を押しましょう。','factoryview','#battleButton'],
    ['さきほど化学資源から火薬を作りましたね。','next'],
    ['同じ化学資源でもレシピを変えると薬剤を作れます。','next'],
    ['加工炉のレシピを薬剤に切り替えてみましょう。','next'],
@@ -139,7 +143,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  const ghostSpecs=[
   [{x:2,y:11,w:2,h:2,label:'鉄鉱石採集'}, {x:4,y:11,w:3,h:1,label:'→ 工場へ',belt:true}],
   [],
-  [{x:5,y:15,w:1,h:1,label:'加工炉の配置例'}],
+  [{x:5,y:11,w:1,h:1,label:'撤去後の加工炉位置'}],
   [{x:2,y:16,w:2,h:2,label:'化学資源採集'}, {x:5,y:18,w:1,h:1,label:'加工炉の配置例'}],
   [],
   [{x:14,y:14,w:3,h:2,label:'補助工場の配置例'}], [], []
@@ -171,11 +175,16 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   if(mode.startsWith('tab:'))return selectedTab===mode.slice(4);
   if(mode.startsWith('select:'))return selectedKind===mode.slice(7);
   if(mode.startsWith('pending:'))return placementPending;
+  if(mode==='placed:smelter')return factory.buildings.some(b=>b.kind==='smelter'&&b.x===5&&b.y===11);
   if(mode.startsWith('placed:'))return factory.buildings.some(b=>b.kind===mode.slice(7));
   if(mode==='beltmode')return beltMode;
+  if(mode==='removebelt')return !beltAt(factory,5,11);
   if(mode==='beltstart')return beltStartSeen;
   if(mode==='beltdone')return beltCount>0&&factory.belts.length>2;
   if(mode==='battleview')return !document.querySelector('#battlePreview')?.hidden;
+  if(mode==='factoryview')return !!document.querySelector('#battlePreview')?.hidden;
+  if(mode==='detailopen')return !document.querySelector('#cardDetailOverlay')?.hidden && (document.querySelector('#cardDetailPanel .card-detail-breadcrumb')?.textContent||'').includes('軽装歩兵');
+  if(mode==='detailclose')return detailSeen && !!document.querySelector('#cardDetailOverlay')?.hidden;
   if(mode==='rearplaced')return battle.units[0].some((col,i)=>col[1]?.name==='軽装歩兵'&&col[1].hp>0);
   if(mode==='allyplaced')return battle.units[0].flat().some(u=>u?.name==='軽装歩兵'&&u.hp>0);
   if(mode==='heavyplaced')return battle.units[0][trainingColumn][0]?.name==='重装歩兵'&&battle.units[0][trainingColumn][0].hp>0;
@@ -202,7 +211,11 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    const wanted=handCards.find(c=>c.textContent.includes(name));wanted?.querySelector('.card')?.classList.add('training-target-cell');
    const wantedRow=mode==='heavyplaced'?0:1;
    const slots=Array.from(document.querySelectorAll('#combatBoard .combat-slot.ally'));
-   const slot=slots.find(c=>Number(c.dataset.row)===wantedRow&&Number(c.dataset.column)===trainingColumn)||slots.find(c=>Number(c.dataset.row)===wantedRow);slot?.classList.add('training-target-cell');
+   const targets=slots.filter(c=>Number(c.dataset.row)===wantedRow&&(mode!=='heavyplaced'||Number(c.dataset.column)===trainingColumn));
+   targets.forEach(c=>c.classList.add('training-target-cell'));
+  }
+  if(mode==='removebelt'||mode==='placed:smelter'){
+   document.querySelectorAll('#board>.cell')[11*24+5]?.classList.add('training-target-cell');
   }
   if(mode==='beltstart'||mode==='beltdone'){
    // The guide's fixed starting layout uses a 2x2 iron zone at (2,11),
@@ -222,7 +235,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  }
  function nextLine(){ $('trainingFeedback').hidden=true;if(line<LINES[phase].length-1){line++;selectedTab='';selectedKind='';placementPending=false;render()}}
  function goNextIf(mode){if(current()?.[1]===mode)nextLine()}
- function advance(){if(phase===0||phase===3){const inf=factory.buildings.find(b=>b.kind==='infantry');if(inf)selectRecipe(factory,inf.id,phase===0?'card_3_infantry':'card_5_infantry');}phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===1){battle.ready=0;openBattle();}render();}
+ function advance(){if(phase===0||phase===3){const inf=factory.buildings.find(b=>b.kind==='infantry');if(inf)selectRecipe(factory,inf.id,phase===0?'card_3_infantry':'card_5_infantry');}phase=Math.min(phase+1,PHASES.length-1);line=0;selectedTab='';selectedKind='';placementPending=false;beltStartSeen=false;shippedStart=factory.shipped.length;lastHand=factory.hand.map(itemName);if(phase===1){battle.ready=0;}render();}
  function begin(){const fresh=initialState(1);Object.assign(factory,fresh);factory.money=1200; // Training allowance; explained in the opening dialogue.
   // Fixed, open training field. Factory and shipping belt use normal placement functions.
   factory.zones=[{x:2,y:11,kind:'iron',resource:'鉄鉱石'},{x:2,y:16,kind:'chem',resource:'化学資源'},{x:16,y:2,kind:'copper',resource:'銅鉱石'},{x:16,y:16,kind:'oil',resource:'原油'}];
@@ -230,12 +243,13 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   const built=factory.buildings.find(b=>b.kind==='infantry');selectRecipe(factory,built.id,'card_2_infantry');
   beltLine(factory,9,11,10,11);
   const existingStats=battle.stats;const freshBattle=createBattle(factory);Object.assign(battle,freshBattle);battle.factory=factory;battle.stats=existingStats||{};battle.scriptedOpponents=true;battle.health[1]=Math.max(battle.health[1],1000);battle.maxHealth=Math.max(battle.maxHealth,1000);
-  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;firstOpponent=null;reinforcement=null;firstCoreHP=null;heavyId=null;trainingColumn=2;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
+  phase=0;line=0;selectedTab='';selectedKind='';beltMode=false;beltCount=0;beltStartSeen=false;placementPending=false;shippedStart=0;hpAtPause=null;completed=false;enemyIntroduced=false;firstOpponent=null;reinforcement=null;firstCoreHP=null;heavyId=null;trainingColumn=2;dangerPaused=false;firstAssaultDefeated=false;secondAssaultSpawned=false;detailSeen=false;hintVisible=true;$('trainingHint').textContent='ヒントを隠す';openFactory();updateDock();draw();render();
  }
  function exit(){phase=-1;hpAtPause=null;render()}
  function onPulse(){if(phase<0||completed)return;
   const mode=current()?.[1];
   if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced')highlightExact(mode);
+  if(mode==='detailopen'&&conditionMet(mode))detailSeen=true;
   if(phase===1){
    const rear=battle.units[0][trainingColumn][1];
    if(mode==='rearplaced'){
@@ -249,26 +263,32 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
    if(mode==='corehit'&&firstCoreHP===null)firstCoreHP=battle.health[1];
    if(mode==='corehit'&&firstCoreHP!==null&&battle.health[1]<firstCoreHP){nextLine();return;}
    if(mode==='reinforcement'&&!reinforcement&&firstOpponent&&!battle.units[1][trainingColumn][0]){
-    if(deploy(battle,1,{name:'歩兵分隊',mods:[]},trainingColumn,0))reinforcement=battle.units[1][trainingColumn][0];
+    if(deploy(battle,1,{name:TUTORIAL_BATTLE.assaultUnit,mods:[]},trainingColumn,0))reinforcement=battle.units[1][trainingColumn][0];
    }
    if(mode==='reinforcement'&&reinforcement){nextLine();return;}
-   if(mode==='danger'&&rear&&rear.hp>0&&rear.hp<=rear.maxHP*.65){advance();openFactory();return;}
-   // Prevent the practice unit from dying before the teaching pause.
-   if(rear&&rear.hp>0&&rear.hp<=Math.max(15,rear.maxHP*.27)&&mode==='danger'){advance();openFactory();return;}
+   // Stop after three unmodified hits (70 -> 28 HP); never change normal card stats.
+   if(reinforcement&&rear&&rear.hp>0&&rear.hp<=rear.maxHP-(battle.stats[TUTORIAL_BATTLE.assaultUnit]?.attack??14)*TUTORIAL_BATTLE.firstPauseHits)dangerPaused=true;
+   if(mode==='danger'&&dangerPaused){advance();return;}
   }
   if(mode!=='next'&&conditionMet(mode)){nextLine();return}
-  if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();if(phase===1)openBattle();return}
+  if(mode==='ship'&&PHASES[phase].target&&factory.shipped.slice(shippedStart).some(x=>itemName(x)===PHASES[phase].target)){advance();return}
   if(mode==='material:装甲板'&&(factory.buildings.some(b=>b.kind==='smelter'&&(b.output&&itemName(b.output)==='装甲板'||Object.entries(b.inventory||{}).some(([n,count])=>count>0&&decodeItem(n).name==='装甲板')))||factory.belts.some(b=>itemName(b.item)==='装甲板'))){advance();return}
   if(phase===4&&mode==='wounded'){
    const heavy=battle.units[0][trainingColumn][0];
-   if(heavy?.name==='重装歩兵'&&heavy.hp>0&&heavy.hp<=heavy.maxHP*.8){hpAtPause=[[heavy.id,heavy.hp]];advance();openFactory();return;}
-   // If the first squad is defeated, bring in another real unit to demonstrate shielding.
-   if(heavy&&(!battle.units[1][trainingColumn][0]||battle.units[1][trainingColumn][0].hp<=0&&battle.units[1][trainingColumn][0].deadUntil<=battle.time))deploy(battle,1,{name:'歩兵分隊',mods:[]},trainingColumn,0);
+   const opponent=battle.units[1][trainingColumn][0];
+   if(reinforcement?.hp===0)firstAssaultDefeated=true;
+   // Never heal-pause during the first fight: the player must defeat that squad.
+   if(firstAssaultDefeated&&!secondAssaultSpawned&&!opponent){
+    if(deploy(battle,1,{name:TUTORIAL_BATTLE.assaultUnit,mods:[]},trainingColumn,0))secondAssaultSpawned=true;
+   }
+   if(secondAssaultSpawned&&heavy?.hp>0&&heavy.hp<=heavy.maxHP*TUTORIAL_BATTLE.healingPauseFraction){
+    hpAtPause=[[heavy.id,heavy.hp]];advance();return;
+   }
   }
   if(mode==='healed'&&hpAtPause&&hpAtPause.some(([id,oldHp])=>battle.units[0].flat().some(u=>u?.id===id&&u.hp>oldHp))){advance();return}
   if(phase===7&&battle.victor){completed=true;$('trainingDescription').textContent='演習クリア！採集から戦闘まで完了しました。';glow();$('trainingNext').hidden=true;return}
  }
- function battleFrozen(){return phase===0||phase===2||phase===3||phase===5||phase===6||(phase===1&&['rearplaced','next'].includes(current()?.[1])&& !firstOpponent)||(phase===4&&current()?.[1]!=='wounded')}
+ function battleFrozen(){return phase===0||phase===2||phase===3||phase===5||phase===6|| (phase===1&&(dangerPaused||!firstOpponent)) || (phase===4&&current()?.[1]!=='wounded')}
  $('trainingNext').onclick=()=>{if(current()?.[1]==='next')nextLine()};
  $('trainingMenu').onclick=()=>{$('trainingMenuItems').hidden=!$('trainingMenuItems').hidden};
  $('trainingExit').onclick=()=>{if(window.confirm('演習を中断してメニューへ戻りますか？'))exit()};
