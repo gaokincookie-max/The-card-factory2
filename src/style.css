@@ -743,3 +743,14 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .training-visual-chip{background:#24616b;border:1px solid #7bddce;color:#e4fff5;border-radius:6px;padding:4px 7px;font-weight:750;font-size:11px;}
 .training-visual-caption{color:#bddeea;font-size:10px;}
 .training-target-cell{outline:3px solid #ffe68a!important;outline-offset:-3px;box-shadow:inset 0 0 0 2px #eab755,0 0 12px #ffe887aa!important;animation:training-pulse 1.3s ease-in-out infinite;}
+
+/* v4.7.31: Virtual landscape keeps a portrait browser orientation on phones.
+   Override the portrait single-column card-detail rule within the rotated game viewport. */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:750px) {
+  #gameViewport .card-detail-grid {grid-template-columns:minmax(0,1fr) minmax(0,1.02fr) minmax(0,1fr)!important;gap:8px!important;align-items:start;}
+  #gameViewport .card-detail-center, #gameViewport .card-detail-right {grid-row:auto!important;min-width:0;}
+  #gameViewport .card-detail-side{padding:8px!important;}
+  #gameViewport .card-detail-side h3{font-size:clamp(11px,1.4dvh,16px);}
+  #gameViewport .card-detail-panel{overflow:auto!important;}
+  #gameViewport .card-ingredient .fcg-card{width:52px;min-width:52px;}
+}

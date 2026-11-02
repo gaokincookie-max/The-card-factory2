@@ -4,7 +4,7 @@ import {makeCard,openCardDetail} from './card-ui.js';
 import {recipes,itemName,warehouseStock,catalog} from './engine.js';
 import {isUnit,localBattleCommand} from './battle.js';
 import {battleArtUrl} from './battle-art.js';
-import {createBattle3D} from './battle-3d.js?v=4.7.30';
+import {createBattle3D} from './battle-3d.js?v=4.7.31';
 export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>0){
  // All player-originated mutations go through the shared command boundary.
  // A legacy-compatible local adapter is kept for isolated UI tests.
@@ -38,6 +38,7 @@ export function mountBattle(b,element,onChange,commandExecutor=null,getTeam=()=>
    applyDisplayMode();
  };
  const board=element.querySelector('#combatBoard'),hand=element.querySelector('#combatHand'),cast=element.querySelector('#combatCast'),message=element.querySelector('#combatSelection');
+ element.addEventListener('fcg:training-target', e=>{threeView?.setTutorialTarget(e.detail || null);});
  let drag=null,ghost=null,pointer=null,lastSignature='',notice='',noticeUntil=0,pending=null;
  let threeView=null;
  const threeContainer=document.createElement('div');threeContainer.className='combat-three-container';threeContainer.hidden=true;

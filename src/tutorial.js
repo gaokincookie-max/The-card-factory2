@@ -195,6 +195,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
  }
  function highlightExact(mode){
   document.querySelectorAll('.training-target-cell').forEach(n=>n.classList.remove('training-target-cell'));
+  document.querySelector('#battlePreview')?.dispatchEvent(new CustomEvent('fcg:training-target',{detail:(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced')?{row:mode==='heavyplaced'?0:1,col:mode==='heavyplaced'?trainingColumn:null}:null}));
   if(mode==='rearplaced'||mode==='allyplaced'||mode==='heavyplaced'){
    const name=mode==='heavyplaced'?'重装歩兵':'軽装歩兵';
    const handCards=Array.from(document.querySelectorAll('#combatHand .combat-hand-cell'));

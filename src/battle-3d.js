@@ -17,7 +17,7 @@ const THEME = Object.freeze({
   enemy: { border: '#e7a0aa', background: '#563543', empty: '#50303d' },
 });
 
-function cardArtwork(unit, team, col, row, illustration = null) {
+function cardArtwork(unit, team, col, row, illustration = null, highlighted = false) {
   const canvas = document.createElement('canvas');
   canvas.width = TEXTURE_WIDTH;
   canvas.height = TEXTURE_HEIGHT; // exactly 5:7, independent of screen size and perspective
@@ -27,8 +27,8 @@ function cardArtwork(unit, team, col, row, illustration = null) {
   const px = (value) => value * scaleUnit;
   ctx.fillStyle = unit ? colors.background : colors.empty;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = colors.border;
-  ctx.lineWidth = px(10);
+  ctx.strokeStyle = highlighted ? '#ffe37a' : colors.border;
+  ctx.lineWidth = highlighted ? px(14) : px(10);
   ctx.strokeRect(px(5), px(5), canvas.width - px(10), canvas.height - px(10));
   ctx.fillStyle = '#e6f5ff';
   ctx.textAlign = 'center';
@@ -57,6 +57,12 @@ function cardArtwork(unit, team, col, row, illustration = null) {
   ctx.fillRect(px(19), px(323), px(218), px(12));
   ctx.fillStyle = '#60d7ae';
   ctx.fillRect(px(19), px(323), px(218) * (unit.maxHP ? Math.max(0, unit.hp / unit.maxHP) : 0), px(12));
+  // Same attack-cycle progress as the 2D brightness overlay.
+  if (unit.deadUntil === null && unit.interval > 0) {
+    const charge = Math.max(0, Math.min(1, 1 - (unit.remaining || 0) / (unit.interval * 100)));
+    ctx.fillStyle = '#142734';ctx.fillRect(px(19), px(340), px(218), px(8));
+    ctx.fillStyle = '#82e8ed';ctx.fillRect(px(19), px(340), px(218) * charge, px(8));
+  }
   return canvas;
 }
 
@@ -91,6 +97,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   const slots = new Map();
   const imageCache = new Map();
   let disposed = false;
+  let tutorialTarget = null;
   let lastLayout = '';
   // All twenty cards share one real 3D plane and a single perspective camera.
   // The old fit only minimized clipping; on ultrawide battlefields it left the
@@ -231,10 +238,12 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
       const entry = slots.get(`${team}-${col}-${row}`);
       const unit = battle.units[team]?.[col]?.[row] || null;
       const side = team === myTeam ? 'ally' : 'enemy';
-      const signature = JSON.stringify([side, unit?.name, unit?.hp, unit?.maxHP, unit?.mods, unit?.deadUntil !== null]);
+      const highlighted = !!tutorialTarget && team === myTeam && row === tutorialTarget.row && (tutorialTarget.col == null || col === tutorialTarget.col) && !unit;
+      const chargeStep = unit?.deadUntil === null && unit?.interval > 0 ? Math.floor(Math.max(0, Math.min(1, 1 - (unit.remaining || 0) / (unit.interval * 100))) * 20) : null;
+      const signature = JSON.stringify([side, unit?.name, unit?.hp, unit?.maxHP, unit?.mods, unit?.deadUntil !== null, chargeStep, highlighted]);
       if (signature !== entry.signature) {
         // Async artwork swaps are deliberately independent of game state.
-        const newTexture = textureFromCanvas(cardArtwork(unit, side, col, row, unit ? getIllustration(unit.name) : null));
+        const newTexture = textureFromCanvas(cardArtwork(unit, side, col, row, unit ? getIllustration(unit.name) : null, highlighted));
         entry.mesh.material.map?.dispose();
         entry.mesh.material.map = newTexture;
         entry.mesh.material.needsUpdate = true;
@@ -280,6 +289,7 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   return {
     update,
     hitAt,
+    setTutorialTarget(target) { tutorialTarget = target; update(); },
     setDropMode(active) { renderer.domElement.classList.toggle('drop-ready', active); },
     dispose() {
       disposed = true;

@@ -114,7 +114,7 @@ cell.className='cell';cell.textContent='';const shipping=x>=11&&x<13&&y>=11&&y<1
   // Previously this queried/removed/recreated every overlay during each frame.
   const directionKey=state.buildings.map(b=>`${b.id}:${b.kind}:${b.x},${b.y},${b.rotation}`).join(';')+
     (pending&&tool==='build'?`|preview:${sel.value}:${pending.x},${pending.y},${state.rotation}`:'');
-  if(directionKey!==directionOverlaySignature){
+  if(directionKey!==directionOverlaySignature || (state.buildings.length > 0 && !board.querySelector('.facility-direction-overlay'))){
     board.querySelectorAll('.facility-direction-overlay').forEach(el=>el.remove());
     for(const b of state.buildings)addDirectionOverlay(b.kind,b.x,b.y,b.rotation,false);
     if(pending&&tool==='build')addDirectionOverlay(sel.value,pending.x,pending.y,state.rotation,true);
