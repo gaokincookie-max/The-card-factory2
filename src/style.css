@@ -763,3 +763,23 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
   outline:3px solid #ffe68a!important;outline-offset:2px;
   background:#45604b!important;box-shadow:0 0 16px #eab75599;
 }
+
+/* v4.7.34: help is an optional read-only aid, never a timed step. */
+#trainingHelp:not([hidden]){margin:5px 0;padding:7px 9px;border:1px solid #91c9b9;border-radius:7px;background:#173d4a;color:#eafff8;max-height:105px;overflow-y:auto;font-size:11px;line-height:1.45}
+#trainingHelp p{margin:4px 0 0}
+#trainingOverlay:has(#trainingHelp:not([hidden])){max-height:min(280px,65vh)}
+#trainingOverlay #trainingHint{white-space:nowrap}
+@media(max-height:550px){#trainingHelp:not([hidden]){max-height:60px}#trainingOverlay:has(#trainingHelp:not([hidden])){max-height:72vh}}
+
+/* v4.7.35 Warehouse controls: compact and touch-friendly; no overlay chooser. */
+.warehouse-settings{display:flex;flex-direction:column;gap:10px;min-width:0}
+.warehouse-current{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:#143a44;border:1px solid #58b9ad;border-radius:8px}
+.warehouse-current span{font-size:11px;color:#b6d7db}.warehouse-current strong{font-size:12px;color:#aff3d9;text-align:right;overflow-wrap:anywhere}
+.warehouse-setting-label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:bold;color:#dfedf1}
+.warehouse-setting-label select{width:100%;max-width:100%;min-height:42px;border-radius:8px;padding:9px;background:#183642;color:#f5ffff;border:1px solid #75abb7;font-size:14px}
+.warehouse-stock-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.warehouse-stock-header small{color:#bdd0db}.warehouse-stock-list{display:flex;flex-direction:column;gap:6px}
+.warehouse-stock-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:9px;border:1px solid #547f8e;border-radius:8px;color:#e2f5f4;background:#233e4a;font-size:12px;min-height:40px}
+.warehouse-stock-item.selected{border:2px solid #76dfb5;background:#214d4c}
+.warehouse-stock-item span{overflow-wrap:anywhere}.warehouse-stock-item b{white-space:nowrap}
+.warehouse-resume{min-height:40px}

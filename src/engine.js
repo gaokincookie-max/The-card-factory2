@@ -61,5 +61,20 @@ export function shippingCell(s,x,y,item){const c=(y-SHIP_Y)*2+(x-SHIP_X);if(c<0|
 export function warehouseStock(b){return Object.entries(b.inventory).filter(([,n])=>n>0).map(([key,n])=>({item:decodeItem(key),count:n,key}))};
 export function handReceive(s,item){const i=s.hand.findIndex(x=>x===null);if(i<0)return false;s.hand[i]=item;s.shipped.push(item);return true;}
 export function useHand(s,index){if(!Number.isInteger(index)||index<0||index>=s.hand.length||!s.hand[index])return false;s.hand[index]=null;return true;}
-export function setWarehouseMode(s,id,mode,filter=''){const b=s.buildings.find(b=>b.id===id);if(!b||!b.kind.startsWith('warehouse'))return '倉庫を選択してください';if(!['random','name','tag'].includes(mode))return '不明なモード';b.warehouseMode=mode;b.warehouseFilter=filter;b.warehouseCool=FACTORY_ECONOMY.warehouseModeSwitchCooldownSeconds;return null;}
+export function setWarehouseMode(s,id,mode,filter=''){const b=s.buildings.find(b=>b.id===id);if(!b||!b.kind.startsWith('warehouse'))return '倉庫を選択してください';if(!['random','name','tag','type','paused'].includes(mode))return '不明なモード';
+ if(mode==='type'&&!['unit','support','other'].includes(filter))return '種類を選択してください';
+ if(mode==='name'&&!filter)return 'カード名を選択してください';
+ if(mode==='paused'){
+   if(b.warehouseMode!=='paused'){
+     b.warehouseResumeMode=b.warehouseMode;
+     b.warehouseResumeFilter=b.warehouseFilter;
+   }
+   b.warehouseMode='paused';
+ }else{
+   b.warehouseMode=mode;
+   b.warehouseFilter=filter;
+ }
+ b.warehouseClock=0;
+ b.warehouseCool=FACTORY_ECONOMY.warehouseModeSwitchCooldownSeconds;
+ return null;}
 export function step(s,dt){dt=Math.min(Math.max(dt,0),FACTORY_RULES.maxStepSeconds);s.shippingCooldown=Math.max(0,s.shippingCooldown-dt);s.tick+=dt;s.money+=dt*FACTORY_RULES.materialsPerSecond;runBuildings(s,dt);routeBelts(s,dt);}
