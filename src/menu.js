@@ -26,7 +26,7 @@ export function mountMainMenu({openBattle,openFactory,openOnline,openTutorial}){
  if(section==='battle'){
   if(!step){content.append(action('オンライン','他のプレイヤーと対戦',()=>{step='online';render()}),action('オフライン','CPU対戦・チュートリアル',()=>{step='offline';render()}));return}
   if(step==='online'){content.append(action('フレンド対戦','ルーム番号で友達と接続',()=>{close(false);openOnline?.()}),action('ランダムマッチ','今後実装予定',()=>{} ,{disabled:true}));return}
-  content.append(action('CPU対戦','新しいCPU対戦を開始する',()=>{close();openBattle?.()}),action('チュートリアル','採集から出荷・戦闘・回復までの連続演習',()=>{close(false);openTutorial?.()}));return}
+  content.append(action('CPU対戦','新しいCPU対戦を開始する',()=>{close();openBattle?.()}),action('チュートリアル','採集から出荷・倉庫・戦闘までの基礎演習',()=>{close(false);openTutorial?.()}));return}
  if(section==='library'){
   const tabs=mk('div','library-tabs');tabs.append(button('カード一覧','library-tab'+(libraryTab==='cards'?' active':''),()=>{libraryTab='cards';facilityKind=null;render()}),button('施設一覧','library-tab'+(libraryTab==='facilities'?' active':''),()=>{libraryTab='facilities';facilityKind=null;render()}));content.append(tabs);
   const area=mk('div','library-body');content.append(area);

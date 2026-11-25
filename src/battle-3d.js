@@ -290,6 +290,15 @@ export async function createBattle3D(container, getBattle, getMyTeam, onSlotClic
   return {
     update,
     hitAt,
+    slotBox(team,col,row){
+      const mesh=slots.get(`${team}-${col}-${row}`)?.mesh;if(!mesh)return null;
+      mesh.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+      const points=[];for(const x of [-CARD_WIDTH/2,CARD_WIDTH/2])for(const y of [-CARD_HEIGHT/2,CARD_HEIGHT/2]){
+        const p=new THREE.Vector3(x,y,0).applyMatrix4(mesh.matrixWorld).project(camera);
+        points.push({x:(p.x+1)*container.clientWidth/2,y:(1-p.y)*container.clientHeight/2});
+      }
+      return {left:Math.min(...points.map(p=>p.x)),right:Math.max(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))};
+    },
     setTutorialTarget(target) {
       if (tutorialTarget?.row === target?.row && tutorialTarget?.col === target?.col) return;
       tutorialTarget = target; update();
