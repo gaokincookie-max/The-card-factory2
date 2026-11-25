@@ -1,3 +1,4 @@
+import {selectionPopup} from './selection-popup.js';
 import {FACTORY_ECONOMY} from './factory-economy-config.js';
 import {WAREHOUSE_TYPES, warehouseModeLabel} from './warehouse-policy.js';
 import {createTutorial} from './tutorial.js';
@@ -86,15 +87,9 @@ function warehouseInputs(root,b){
   const current=elem('strong','',format());
   title.append(elem('span','','現在の出荷設定'),current);
   options.append(title);
-  const select=elem('select','warehouse-mode-select');
-  for(const [value,label] of [['random','すべて出荷'],['type','種類で指定'],['name','カード名で指定'],['paused','出荷停止']]){
-    const item=document.createElement('option');item.value=value;item.textContent=label;select.append(item);
-  }
-  // A legacy tag-mode save remains operable without reintroducing the unwieldy tag picker.
-  if(b.warehouseMode==='tag'){
-    const legacy=document.createElement('option');legacy.value='tag';legacy.textContent='旧タグ指定（保存済み）';select.append(legacy);
-  }
-  select.value=b.warehouseMode;
+  const choices=[['random','すべて出荷'],['type','種類で指定'],['name','カード名で指定'],['paused','出荷停止']];
+  if(b.warehouseMode==='tag')choices.push(['tag','旧タグ指定（保存済み）']);
+  const select=selectionPopup('warehouse-mode-select',choices,b.warehouseMode);
   const selectLabel=elem('label','warehouse-setting-label','出荷方式');
   selectLabel.append(select);options.append(selectLabel);
   const filterArea=elem('div','warehouse-filter-area');options.append(filterArea);
@@ -129,9 +124,7 @@ function warehouseInputs(root,b){
   function renderFilter(){
     filterArea.replaceChildren();
     if(b.warehouseMode==='type'){
-      const type=elem('select','warehouse-type-select');
-      for(const {id,label} of WAREHOUSE_TYPES){const item=document.createElement('option');item.value=id;item.textContent=label;type.append(item);}
-      type.value=b.warehouseFilter||'unit';
+      const type=selectionPopup('warehouse-type-select',WAREHOUSE_TYPES.map(({id,label})=>[id,label]),b.warehouseFilter||'unit');
       type.onchange=()=>{if(apply('type',type.value))renderStock();};
       const label=elem('label','warehouse-setting-label','出荷する種類');label.append(type);filterArea.append(label);
     }else if(b.warehouseMode==='name'){

@@ -1,3 +1,4 @@
+import {intersect,visibleFraction,dimFor,dockCategory} from './tutorial-focus.js';
 import {FACTORY_ECONOMY} from './factory-economy-config.js';
 import {instructionFor, hintsFor} from './tutorial-dialogue.js';
 /**
@@ -65,7 +66,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   const isDetailVisible=()=>!byId('cardDetailOverlay')?.hidden;
   function notify(text){const el=$('trainingFeedback');el.textContent=text;el.hidden=false;}
   function clearNotification(){$('trainingFeedback').hidden=true;}
-  function visible(el){return el && !el.hidden && (!el.getClientRects || el.getClientRects().length>0);}
+  function visible(el){return el && !el.hidden && (!el.getClientRects || el.getClientRects().length>0) && (typeof getComputedStyle!=='function'||getComputedStyle(el).visibility!=='hidden');}
   function elementBox(el){
     if(!visible(el))return null;
     const r=el.getBoundingClientRect(), a=clientToGame(r.left,r.top,viewport), b=clientToGame(r.right,r.bottom,viewport);
@@ -109,8 +110,17 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   let lastRecipeFocus='';
   function drawSpotlight(){
     if(!active){spotlight.hidden=true;return;}
-    const focus=currentFocus(), hand=handFocus(),check=step()?.check||'';
-    const instruction=instructionFor(step(),focus?.selector==='.recipe-confirm');
+    let focus=currentFocus(), hand=handFocus();const check=step()?.check||'';
+    let instruction=instructionFor(step(),focus?.selector==='.recipe-confirm');
+    const selector=focus?.selector||'';const dock=byId('dock');const needsDock=/^\.tab|^#buildingCards|^#belts$/.test(selector);
+    let fallback=false;
+    if(needsDock&&dock?.classList?.contains('dock-collapsed')){focus={type:'ui',selector:'#dockToggle'};hand=null;instruction='建築メニューを開くボタンをタップしてください。';fallback=true;}
+    else if(needsDock&&dockCategory(selector)&&!visible(document.querySelector(selector))){focus={type:'ui',selector:`.tab[data-category="${dockCategory(selector)}"]`};instruction='光っている建築タブをタップしてください。';fallback=true;}
+    if(!fallback&&['warehouse:type','warehouse:unit'].includes(check)&&!isModalVisible()){focus={type:'cell',x:10,y:10,w:1,h:1};instruction='小型倉庫をタップして詳細画面を開いてください。';fallback=true;}
+    if(!fallback&&check==='warehouse:unit'&&warehouse()?.warehouseMode!=='type'){focus={type:'ui',selector:visible(document.querySelector('.warehouse-mode-select .game-picker-options:not([hidden])'))?'.warehouse-mode-select [data-value="type"]':'.warehouse-mode-select'};instruction='出荷方式を「種類で指定」に変更してください。';fallback=true;}
+    if(!fallback&&check==='warehouse:type'&&visible(document.querySelector('.warehouse-mode-select .game-picker-options:not([hidden])'))){focus={type:'ui',selector:'.warehouse-mode-select [data-value="type"]'};}
+    if(!fallback&&check==='warehouse:unit'&&visible(document.querySelector('.warehouse-type-select .game-picker-options:not([hidden])'))){focus={type:'ui',selector:'.warehouse-type-select [data-value="unit"]'};}
+
     if($('trainingDescription').textContent!==instruction)$('trainingDescription').textContent=instruction;
     const drag=check.startsWith('deployed:')||check==='flank:deployed'||check==='use:material';
     const target=check==='use:material'?{type:'ui',selector:'#combatCast'}:focus;
@@ -119,18 +129,26 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     const targetBoxes=focusBoxes(target).map(b=>check==='use:material'?{left:(b.left+b.right)/2-25,right:(b.left+b.right)/2+25,top:(b.top+b.bottom)/2-20,bottom:(b.top+b.bottom)/2+20}:b), sourceBoxes=focusBoxes(hand);
     const boxes=hand?(drag?[...sourceBoxes,...targetBoxes]:sourceBoxes):targetBoxes;
     const W=viewport.clientWidth,H=viewport.clientHeight;
-    const clipped=boxes.map(b=>({left:Math.max(0,b.left-4),top:Math.max(0,b.top-4),right:Math.min(W,b.right+4),bottom:Math.min(H,b.bottom+4)})).filter(b=>b.right>b.left&&b.bottom>b.top);
-    if(!clipped.length || (isDetailVisible()&&!focus?.selector?.startsWith('#cardDetailPanel')) || (isModalVisible()&&focus?.type!=='ui')){spotlight.hidden=true;return;}
+    const screen={left:0,top:0,right:W,bottom:H};
+    let clip=screen;
+    if(['cell','cells'].includes(focus?.type)){const boardClip=elementBox(document.querySelector('.board-scroll'));if(boardClip)clip=intersect(screen,boardClip);}
+    else if(focus?.selector){const el=document.querySelector(focus.selector);for(let p=el?.parentElement;p&&p!==viewport;p=p.parentElement){if(typeof getComputedStyle!=='function')break;const css=getComputedStyle(p);if(/auto|scroll|hidden|clip/.test(css.overflowX+' '+css.overflowY)){const b=elementBox(p);if(b)clip=intersect(clip,b);}}}
+    const missing=!boxes.length||boxes.some(b=>visibleFraction(b,clip)<.85);
+    const opacity=dimFor(step(),focus,missing||fallback);
+    if(missing&&['cell','cells'].includes(focus?.type))$('trainingDescription').textContent=instruction+' 対象が見えない場合は盤面を移動してください。';
+    const clipped=boxes.map(b=>intersect({left:b.left-4,top:b.top-4,right:b.right+4,bottom:b.bottom+4},clip)).filter(b=>b.right>b.left&&b.bottom>b.top);
+    if((!clipped.length&&!boxes.length) || (isDetailVisible()&&!focus?.selector?.startsWith('#cardDetailPanel')) || (isModalVisible()&&focus?.type!=='ui')){spotlight.hidden=true;return;}
     spotlight.hidden=false;
     // Partition the dimmed area into strips; overlapping highlights stay clear.
     const xs=[...new Set([0,W,...clipped.flatMap(b=>[b.left,b.right])])].sort((a,b)=>a-b);
     const ys=[...new Set([0,H,...clipped.flatMap(b=>[b.top,b.bottom])])].sort((a,b)=>a-b);
     const shades=[];for(let i=0;i<xs.length-1;i++)for(let j=0;j<ys.length-1;j++){
       const x=xs[i],y=ys[j],w=xs[i+1]-x,h=ys[j+1]-y;
-      if(!clipped.some(b=>x>=b.left&&x+w<=b.right&&y>=b.top&&y+h<=b.bottom))shades.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(3,9,17,.66)"/>`);
+      if(opacity>0&&!clipped.some(b=>x>=b.left&&x+w<=b.right&&y>=b.top&&y+h<=b.bottom))shades.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(3,9,17,${opacity})"/>`);
     }
     const edges=clipped.map(b=>`<rect x="${b.left}" y="${b.top}" width="${b.right-b.left}" height="${b.bottom-b.top}" rx="4" fill="none" stroke="#ffe17d" stroke-width="2"/>`);
-    let arrow='';if(drag&&sourceBoxes.length&&targetBoxes.length){const a=sourceBoxes[0],b=targetBoxes[0],x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,u=(b.left+b.right)/2,v=(b.top+b.bottom)/2,angle=Math.atan2(v-y,u-x);arrow=`<path d="M ${x} ${y} L ${u} ${v} M ${u-14*Math.cos(angle-.5)} ${v-14*Math.sin(angle-.5)} L ${u} ${v} L ${u-14*Math.cos(angle+.5)} ${v-14*Math.sin(angle+.5)}" fill="none" stroke="#ffe17d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;}
+    let arrow='';if(drag&&!missing&&sourceBoxes.length&&targetBoxes.length){const a=sourceBoxes[0],b=targetBoxes[0],x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,u=(b.left+b.right)/2,v=(b.top+b.bottom)/2,angle=Math.atan2(v-y,u-x);arrow=`<path d="M ${x} ${y} L ${u} ${v} M ${u-14*Math.cos(angle-.5)} ${v-14*Math.sin(angle-.5)} L ${u} ${v} L ${u-14*Math.cos(angle+.5)} ${v-14*Math.sin(angle+.5)}" fill="none" stroke="#ffe17d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;}
+    if(missing&&boxes.length&&['cell','cells'].includes(focus?.type)&&clip.right-clip.left>30&&clip.bottom-clip.top>30){const b=boxes[0],x=(b.left+b.right)/2,y=(b.top+b.bottom)/2;const u=Math.max(clip.left+15,Math.min(clip.right-15,x)),v=Math.max(clip.top+15,Math.min(clip.bottom-15,y));const a=Math.atan2(y-v,x-u);if(Math.hypot(x-u,y-v)>2){const q=u-22*Math.cos(a),r=v-22*Math.sin(a);arrow=`<path d="M ${q} ${r} L ${u} ${v} M ${u-9*Math.cos(a-.6)} ${v-9*Math.sin(a-.6)} L ${u} ${v} L ${u-9*Math.cos(a+.6)} ${v-9*Math.sin(a+.6)}" fill="none" stroke="#ffe17d" stroke-width="4" stroke-linecap="round"/>`;}}
     const markup=`<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" aria-hidden="true">${shades.join('')}${edges.join('')}${arrow}</svg>`;
     if(spotlight.innerHTML!==markup)spotlight.innerHTML=markup;
     if(!overlay.dataset.dragged){
