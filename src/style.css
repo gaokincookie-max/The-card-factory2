@@ -819,3 +819,6 @@ body{padding-bottom:0!important}.workarea{padding:3px!important}.board-scroll{he
 .game-picker-options{display:grid;gap:5px;padding:6px 0;}
 .game-picker-options[hidden]{display:none!important;}
 .game-picker-options button[aria-pressed=true]{border-color:#76dfb5;background:#214d4c;}
+
+#trainingChapterResult:not([hidden]){display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+#trainingChapterResult[hidden],#trainingChapterResult button[hidden]{display:none!important;}

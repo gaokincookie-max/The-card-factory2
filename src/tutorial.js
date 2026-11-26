@@ -1,3 +1,5 @@
+import {CHAPTERS,recordChapter} from './tutorial-chapters.js';
+import {prepareChapter} from './tutorial-presets.js';
 import {intersect,visibleFraction,dimFor,dockCategory} from './tutorial-focus.js';
 import {FACTORY_ECONOMY} from './factory-economy-config.js';
 import {instructionFor, hintsFor} from './tutorial-dialogue.js';
@@ -30,8 +32,12 @@ export function isConnectedBeltPath(factory, segment){
   return true;
 }
 
-export function createTutorial({factory,battle,openBattle,openFactory,draw,updateDock,getUIState=()=>({}),resetUI=()=>{}}){
+export function createTutorial({factory,battle,openBattle,openFactory,draw,updateDock,getUIState=()=>({}),resetUI=()=>{},openChapterMenu=()=>byId('openMenuButton')?.click()}){
   let materialUsed=false;
+  let individual=false, chapterDone=false, checkpoint=null;
+  const copy=v=>JSON.parse(JSON.stringify(v));
+  function saveCheckpoint(){const {factory:ignored,stats,...rest}=battle;checkpoint={factory:copy(factory),battle:copy(rest),index,flags:{materialUsed,released,hasFrozenAtFive,combatHold,enemyFirstHP,seenDetail,seenInfantryDetail,flankSpawned,warehouseMaterialObserved,assaultStartingHP,heavyStartingHP,assaultHitCount,assaultPriorHP,assaultWasSpawned},view:inBattle()};}
+  function retry(){if(!checkpoint)return;resetUI();Object.assign(factory,copy(checkpoint.factory));Object.assign(battle,copy(checkpoint.battle));battle.factory=factory;({materialUsed,released,hasFrozenAtFive,combatHold,enemyFirstHP,seenDetail,seenInfantryDetail,flankSpawned,warehouseMaterialObserved,assaultStartingHP,heavyStartingHP,assaultHitCount,assaultPriorHP,assaultWasSpawned}=checkpoint.flags);index=checkpoint.index;chapterDone=false;completed=false;selectedKind=selectedCategory=pendingKind="";lastCell=null;$("trainingMenuItems").hidden=true;$("trainingChapterResult").hidden=true;$("trainingHint").hidden=false;checkpoint.view?openBattle():openFactory();updateDock();draw();enter();}
   let active=false,completed=false,index=0,outcomeReady=false,enteredAt=0,startShipment=0,handBefore=0,moneyBefore=0;
   let selectedKind='',pendingKind='',selectedCategory='',lastCell=null,seenDetail=false;
   let hasFrozenAtFive=false, released=false, lastTargetKey='',hintLevel=0;
@@ -45,8 +51,8 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   overlay.innerHTML=`
    <div class="training-head" id="trainingHandle"><strong>▦ 新・工場演習</strong>
     <span id="trainingCount"></span><button id="trainingMenu" type="button" aria-label="演習メニュー">⋯</button></div>
-   <div id="trainingMenuItems" hidden><button id="trainingRestart" type="button">最初から</button><button id="trainingExit" type="button">演習を中断</button></div>
-   <p id="trainingDescription"></p><p id="trainingVisual" class="training-new-subtitle"></p>
+   <div id="trainingMenuItems" hidden><button id="trainingRestart" type="button">この章をやり直す</button><button id="trainingExit" type="button">演習を中断</button></div>
+   <div id="trainingChapterResult" hidden><button id="trainingContinue" type="button">次の章へ</button><button id="trainingRetryChapter" type="button">もう一度</button><button id="trainingChoose" type="button">チャプター選択</button></div><p id="trainingDescription"></p><p id="trainingVisual" class="training-new-subtitle"></p>
    <div id="trainingHelp" hidden aria-live="polite"></div>
    <p id="trainingFeedback" hidden role="status"></p>
    <div class="training-actions"><button id="trainingHint" type="button">ヒントを見る</button>
@@ -109,7 +115,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   }
   let lastRecipeFocus='';
   function drawSpotlight(){
-    if(!active){spotlight.hidden=true;return;}
+    if(!active||chapterDone){spotlight.hidden=true;return;}
     let focus=currentFocus(), hand=handFocus();const check=step()?.check||'';
     let instruction=instructionFor(step(),focus?.selector==='.recipe-confirm');
     const selector=focus?.selector||'';const dock=byId('dock');const needsDock=/^\.tab|^#buildingCards|^#belts$/.test(selector);
@@ -281,11 +287,13 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     if(!active){spotlight.hidden=true;syncBattleTarget();return;}
     const s=step();const canAdvance=s.kind==='next'||outcomeReady;
     $('trainingNext').hidden=!canAdvance;$('trainingNext').disabled=!canAdvance;
-    $('trainingNext').textContent=s.id==='08-03'?'戦闘再開':s.id==='08-06'?'メニューへ戻る':s.kind==='next'?'次へ ›':'確認して次へ ›';
+    $('trainingNext').textContent=individual&&index===CHAPTERS[s.chapter-1].end?'章を終了':s.id==='08-03'?'戦闘再開':s.id==='08-06'?'メニューへ戻る':s.kind==='next'?'次へ ›':'確認して次へ ›';
     drawSpotlight();
     syncBattleTarget();
   }
   function advance(){
+    const chapter=step().chapter;
+    if(index===CHAPTERS[chapter-1].end){recordChapter(chapter,!individual&&chapter===8);if(individual){chapterDone=true;spotlight.hidden=true;$("trainingDescription").textContent=`第${chapter}章 クリア！ ${CHAPTERS[chapter-1].title}`;$("trainingVisual").textContent=CHAPTERS[chapter-1].description;$("trainingNext").hidden=true;$("trainingHint").hidden=true;$("trainingChapterResult").hidden=false;$("trainingContinue").hidden=chapter===8;return;}}
     if(index>=INTRO_STEPS.length-1){finish();return;}
     const leaving=step()?.id;
     if(leaving==='05-08'){released=true;combatHold=false;battle.time=(battle.ready-PREPARATION_HOLD_SECONDS);}
@@ -294,14 +302,16 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     if(leaving==='06-41')combatHold=false;
     if(leaving==='06-42')combatHold=false;
     if(leaving==='08-03')combatHold=false;
-    index++;lastCell=null;pendingKind='';enteredAt=Date.now();enter();
+    index++;lastCell=null;pendingKind='';enteredAt=Date.now();if(step().chapter!==chapter)saveCheckpoint();enter();
   }
   function finish(){
     exit();
     completed=true;
     byId('openMenuButton')?.click();
   }
-  function begin(){
+  function begin(chapter=0){
+    if(!Number.isInteger(chapter)||chapter<0||chapter>8)throw new Error("Invalid chapter");
+    individual=chapter!==0;chapterDone=false;$("trainingChapterResult").hidden=true;
     resetUI();$('trainingMenuItems').hidden=true;
     const fresh=initialState(1);Object.assign(factory,fresh);
     factory.zones=TRAINING_ZONES.map(z=>({...z}));
@@ -312,9 +322,11 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     flankSpawned=false;seenDetail=false;seenInfantryDetail=false;assaultStartingHP=null;heavyStartingHP=null;assaultHitCount=0;assaultPriorHP=null;assaultWasSpawned=false;hasFrozenAtFive=false;released=false;startShipment=0;warehouseMaterialObserved=false;combatHold=false;enemyFirstHP=null;lastBroadcastTarget="";
     overlay.dataset.dragged='';overlay.style.left='';overlay.style.top='';
     $('trainingHint').hidden=false;
-    openFactory();updateDock();draw();enter();
+    const preset=chapter?prepareChapter(factory,battle,chapter):null;
+    if(preset){index=CHAPTERS[chapter-1].start;released=preset.released;combatHold=preset.combatHold;hasFrozenAtFive=preset.hasFrozenAtFive;}
+    preset?.view==='battle'?openBattle():openFactory();updateDock();draw();saveCheckpoint();enter();
   }
-  function exit(){active=false;completed=false;combatHold=false;$('trainingMenuItems').hidden=true;spotlight.hidden=true;overlay.hidden=true;syncBattleTarget();}
+  function exit(){checkpoint=null;chapterDone=false;active=false;completed=false;combatHold=false;$('trainingMenuItems').hidden=true;spotlight.hidden=true;overlay.hidden=true;syncBattleTarget();}
   let drag=null;
   $('trainingHandle').addEventListener('pointerdown',e=>{
     if(e.target.closest('button'))return;
@@ -333,7 +345,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
   overlay.addEventListener('pointercancel',()=>drag=null);
   // Capture for observation only: do not interfere with the real game handlers.
   document.addEventListener('click',e=>{
-    if(!active)return;
+    if(!active||chapterDone)return;
     const tab=e.target.closest('.tab');if(tab)selectedCategory=tab.dataset.category;
     const card=e.target.closest('#buildingCards button');
     if(card){const key=Object.entries({iron:'鉄鉱石採集',support:'補助・軍需工場',warehouseSmall:'小型倉庫',infantry:'歩兵・軽兵器工場',smelter:'加工炉',chem:'化学資源採集'}).find(([,name])=>card.textContent.includes(name));if(key)selectedKind=key[0];}
@@ -343,7 +355,7 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
       if(step()?.check?.startsWith('pending:'))pendingKind=selectedKind;
     }
   },true);
-  $('trainingNext').onclick=()=>{if(step().kind==='next'||(outcomeReady&&stepReady()))advance();else if(outcomeReady){outcomeReady=false;render();notify('条件が変わりました。もう一度確認してください。');}};
+  $('trainingNext').onclick=()=>{if(chapterDone)return;if(step().kind==='next'||(outcomeReady&&stepReady()))advance();else if(outcomeReady){outcomeReady=false;render();notify('条件が変わりました。もう一度確認してください。');}};
   $('trainingHint').onclick=()=>{
     const s=step(),list=hintsFor(s);
     hintLevel=(hintLevel+1)%(list.length+1);
@@ -353,15 +365,18 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     drawSpotlight();
   };
   $('trainingMenu').onclick=()=>{$('trainingMenuItems').hidden=!$('trainingMenuItems').hidden};
-  $('trainingRestart').onclick=()=>{if(window.confirm('演習を最初からやり直しますか？'))begin()};
+  $('trainingRestart').onclick=()=>{if(window.confirm('この章を最初からやり直しますか？'))retry()};
+  $('trainingContinue').onclick=()=>{if(!chapterDone||step().chapter===8)return;chapterDone=false;index++;$('trainingChapterResult').hidden=true;$('trainingHint').hidden=false;saveCheckpoint();enter();};
+  $('trainingRetryChapter').onclick=()=>{if(chapterDone)retry();};
+  $('trainingChoose').onclick=()=>{exit();openChapterMenu();};
   $('trainingExit').onclick=()=>{if(window.confirm('演習を中断してメニューへ戻りますか？')){exit();byId('openMenuButton')?.click();}};
   let lastSpotlight=0;
   function onPulse(){
-    if(!active||completed)return;
+    if(!active||completed||chapterDone)return;
     // Normal preparation clock counts down in the background, but never below 5s.
     if(!released && battle.time>=(battle.ready-PREPARATION_HOLD_SECONDS)){battle.time=(battle.ready-PREPARATION_HOLD_SECONDS);hasFrozenAtFive=true;}
     if(step()?.id==='03-14')ensureEnemy();
-    if(step()?.id==='08-04'&&['cpu','draw'].includes(battle.victor)){combatHold=true;notify('総合演習で敗北しました。演習メニューから最初からやり直せます。');}
+    if(step()?.id==='08-04'&&['cpu','draw'].includes(battle.victor)){combatHold=true;notify('総合演習で敗北しました。演習メニューからこの章をやり直せます。');}
     if(step()?.id==='06-01'&&!assaultWasSpawned){
       const slot=battle.units[1]?.[2]?.[0];
       if(!slot){assaultWasSpawned=deploy(battle,1,{name:'突撃班',mods:[]},2,0);if(assaultWasSpawned){combatHold=true;assaultStartingHP=battle.units[1][2][0].hp;}}
@@ -387,10 +402,10 @@ export function createTutorial({factory,battle,openBattle,openFactory,draw,updat
     // Target remeasurement is throttled to avoid the previous 20Hz DOM churn.
     if(Date.now()-lastSpotlight>250){lastSpotlight=Date.now();drawSpotlight();}
   }
-  function beforeCommand(type,payload){const error=active?tutorialCommandError(step(),factory,type,payload):null;if(error)notify(error);return error;}
+  function beforeCommand(type,payload){const error=active&&chapterDone?'チャプター終了画面から次の操作を選んでください。':active?tutorialCommandError(step(),factory,type,payload):null;if(error)notify(error);return error;}
   function onCombatEffect(effect){if(active&&step()?.id==='06-02'&&effect.kind==='damage'&&effect.source.team===1&&effect.source.name===TUTORIAL_BATTLE.assaultUnit&&effect.target===battle.units[0][2][1])assaultHitCount++;}
   function afterCommand(type,name,result){if(active&&step()?.check==='use:material'&&type==='PLAY_CARD'&&name==='資材調達'&&result.ok)materialUsed=true;}
-  function battleFrozen(){return active&&(completed||combatHold||(hasFrozenAtFive&&!released));}
+  function battleFrozen(){return active&&(chapterDone||completed||combatHold||(hasFrozenAtFive&&!released));}
   window.addEventListener('resize',()=>{if(active)drawSpotlight()});
-  return {begin,exit,onPulse,battleFrozen,beforeCommand,afterCommand,onCombatEffect,isActive:()=>active};
+  return {begin,exit,onPulse,isChapterDone:()=>chapterDone,battleFrozen,beforeCommand,afterCommand,onCombatEffect,isActive:()=>active};
 }

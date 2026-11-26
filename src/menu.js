@@ -1,3 +1,4 @@
+import {CHAPTERS,readProgress} from './tutorial-chapters.js';
 // Hierarchical main menu and reference database. Existing combat/online hooks are reused.
 import {recipes,catalog} from './engine.js';
 import {makeCard,openCardDetail,cardKind} from './card-ui.js';
@@ -13,9 +14,10 @@ export function mountMainMenu({openBattle,openFactory,openOnline,openTutorial}){
  const shell=mk('div','menu-shell menu-shell-v3');root.replaceChildren(scene,shell);const header=mk('header','menu-header');header.innerHTML='<div class="menu-logo"><span class="menu-logo-symbol">▥</span><div><strong>FACTORY <em>CARD GAME</em></strong><small>INDUSTRIAL COMMAND</small></div></div><div class="menu-header-right"><span class="menu-dev-label">DEVELOPMENT BUILD</span><button type="button" id="menuSettings" class="menu-icon-btn" aria-label="設定">⚙</button></div>';const body=mk('main','menu-main menu-main-v3'),nav=mk('nav','menu-nav'),panel=mk('section','menu-center'),right=mk('aside','menu-right');body.append(nav,panel,right);shell.append(header,body,mk('footer','menu-footer','EARLY ACCESS PROTOTYPE   •   PC / MOBILE LANDSCAPE'));
  const close=(restoreFactory=true)=>{root.hidden=true;window.__fcgMenuOpen=false;if(restoreFactory)openFactory?.()};
  const open=()=>{section=null;step=null;settings=false;facilityKind=null;root.hidden=false;window.__fcgMenuOpen=true;render()};
+ const openChapters=()=>{open();section='battle';step='tutorial';render()};
  const home=()=>{section=null;step=null;facilityKind=null;settings=false;render()};
  const choose=key=>{section=key;step=null;facilityKind=null;settings=false;render()};
- function back(){if(settings){home();return}if(section==='library'&&facilityKind){facilityKind=null;render();return}if(step){step=null;render();return}home()}
+ function back(){if(settings){home();return}if(section==='library'&&facilityKind){facilityKind=null;render();return}if(step==='tutorial'){step='offline';render();return}if(step){step=null;render();return}home()}
  function side(){right.replaceChildren();const f=button('♙','menu-friend-tab',()=>{friend=!friend;side()});f.title='フレンド';right.append(f);if(friend){const box=mk('div','menu-friend-pane');box.append(mk('h2','','フレンド'),mk('p','','フレンド機能は今後実装予定です。'),mk('div','menu-coming','COMING LATER'));right.append(box)}}
  function action(label,description,fn,{disabled=false}={}){const b=button('','menu-mode-action'+(disabled?' unavailable':''),fn);b.append(mk('strong','',label),mk('small','',description));if(disabled)b.append(mk('span','menu-coming','COMING LATER'));return b}
  function cardLibrary(target){const controls=mk('div','library-controls');const input=document.createElement('input');input.type='search';input.placeholder='カード名で検索';input.value=search;const select=document.createElement('select');[['all','すべて'],['unit','ユニット'],['support','補助'],['material','素材']].forEach(([id,name])=>{const opt=mk('option','',name);opt.value=id;select.append(opt)});select.value=filter;controls.append(input,select);target.append(controls);const grid=mk('div','library-card-grid');target.append(grid);const refresh=()=>{grid.replaceChildren();let list=cardNames().filter(name=>name.includes(search)&&(filter==='all'||cardKind(name)===filter||(filter==='support'&&cardKind(name)==='recon')));for(const name of list)grid.append(makeCard(name,{compact:true,onOpen:()=>openCardDetail(name)}));if(!list.length)grid.append(mk('p','guide-muted','該当カードがありません。'))};input.oninput=()=>{search=input.value;refresh()};select.onchange=()=>{filter=select.value;refresh()};refresh()}
@@ -25,8 +27,9 @@ export function mountMainMenu({openBattle,openFactory,openOnline,openTutorial}){
  if(section==='factory'||section==='missions'){content.append(mk('h2','menu-big-coming','COMING LATER'));return}
  if(section==='battle'){
   if(!step){content.append(action('オンライン','他のプレイヤーと対戦',()=>{step='online';render()}),action('オフライン','CPU対戦・チュートリアル',()=>{step='offline';render()}));return}
+  if(step==='tutorial'){content.classList.add('tutorial-chapter-list');const progress=readProgress();content.append(mk('p','menu-intro',`基礎演習 ${progress.completedChapters.length}/8章 クリア`),action('通しチュートリアル','第1章から最後まで',()=>{close(false);openTutorial?.(0)}));for(const c of CHAPTERS)content.append(action(`第${c.chapter}章 ${c.title}${progress.completedChapters.includes(c.chapter)?' ✓':''}`,c.description,()=>{close(false);openTutorial?.(c.chapter)}));return}
   if(step==='online'){content.append(action('フレンド対戦','ルーム番号で友達と接続',()=>{close(false);openOnline?.()}),action('ランダムマッチ','今後実装予定',()=>{} ,{disabled:true}));return}
-  content.append(action('CPU対戦','新しいCPU対戦を開始する',()=>{close();openBattle?.()}),action('チュートリアル','採集から出荷・倉庫・戦闘までの基礎演習',()=>{close(false);openTutorial?.()}));return}
+  content.append(action('CPU対戦','新しいCPU対戦を開始する',()=>{close();openBattle?.()}),action('チュートリアル','採集から出荷・倉庫・戦闘までの基礎演習',()=>{step='tutorial';render()}));return}
  if(section==='library'){
   const tabs=mk('div','library-tabs');tabs.append(button('カード一覧','library-tab'+(libraryTab==='cards'?' active':''),()=>{libraryTab='cards';facilityKind=null;render()}),button('施設一覧','library-tab'+(libraryTab==='facilities'?' active':''),()=>{libraryTab='facilities';facilityKind=null;render()}));content.append(tabs);
   const area=mk('div','library-body');content.append(area);
@@ -34,5 +37,5 @@ export function mountMainMenu({openBattle,openFactory,openOnline,openTutorial}){
   if(facilityKind){const kind=facilityKind;area.append(makeFacilityGuide(kind,{onBack:()=>{facilityKind=null;render()}}));return}
   area.append(makeFacilityIndex({onSelect:kind=>{facilityKind=kind;render()}}));return}
  }
- header.querySelector('#menuSettings').onclick=()=>{settings=true;section=null;render()};root.hidden=false;window.__fcgMenuOpen=true;render();return {open,close};
+ header.querySelector('#menuSettings').onclick=()=>{settings=true;section=null;render()};root.hidden=false;window.__fcgMenuOpen=true;render();return {open,close,openChapters};
 }
